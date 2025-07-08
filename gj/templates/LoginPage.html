@@ -60,6 +60,7 @@
             text-align: left;
         }
 
+        /* 왼쪽 패널 제목 및 내용 스타일 */
         .left-content h2 {
             font-size: 2.9em;
             font-weight: 700;
@@ -67,11 +68,13 @@
             margin-bottom: 10px;
         }
 
+        /* 왼쪽 패널 내용 텍스트 스타일 */
         .left-content p {
             color: #555;
             margin-bottom: 30px;
         }
         
+        /* 왼쪽 패널 푸터 스타일 */
         .left-content p.footnote {
             font-size: 0.8em;
             color: #999;
@@ -82,6 +85,7 @@
             width: 380px;
         }
 
+        /* 오른쪽 폼 레이블 스타일 */
         .login-form label {
             font-size: 1.8em;
             font-weight: bold;
@@ -90,6 +94,7 @@
             margin-bottom: 40px;
         }
 
+        /* 오른쪽 폼 입력창 스타일 */
         .login-form input {
             width: 100%;
             border: none;
@@ -149,7 +154,7 @@
 
     <div class="container">
         <div class="panel left-panel">
-            <div class="left-content">
+            <div class="left-content">  
                 <h2>잠깐!<br>크래프톤 정글러이신가요?</h2>
                 <p>정글러시라면 正文에 가입하셔서<br>다양한 커뮤니케이션과 각종 모임에 참여하세요!</p>
                 <p class="footnote">*정글러가 아니시면 회원가입이 제한됩니다.</p>
@@ -213,13 +218,13 @@
             });
         }
 
-        // [추가] 팝업 열기 함수
+        // 팝업 열기 함수
         function openAuthPopup() {
             // display를 'flex'로 해야 우리가 CSS에 설정한 중앙 정렬이 적용됨
             $('#authPopupOverlay').css('display', 'flex');
         }
 
-        // [추가] 인증 코드 확인 함수
+        // 인증 코드 확인 함수
         function checkAuthCode() {
             const authCode = $('#authCode').val();
             if (authCode === '406') {
@@ -230,7 +235,7 @@
                 $('#authCode').focus();
             }
         }
-        // [추가] 페이지 로딩이 완료되면, 닫기 기능 장착!
+        // 페이지 로딩이 완료되면, 닫기 기능 장착!
         $(document).ready(function(){
             // id가 'authPopupOverlay'인 요소를 클릭했을 때
             $('#authPopupOverlay').on('click', function(e) {
