@@ -170,11 +170,11 @@
                 alert("아이디와 비밀번호를 모두 입력해주세요.");
                 return;
             }
-            
-            // 3. Ajax를 이용해 서버의 /api/login 으로 POST 요청을 보낸다.
+
+            // 3. Ajax를 이용해 서버의 /api/SignIn 으로 POST 요청을 보낸다.
             $.ajax({
                 type: "POST",
-                url: "/api/login",
+                url: "/api/SignIn",
                 data: {
                     id_give: id, 
                     password_give: password

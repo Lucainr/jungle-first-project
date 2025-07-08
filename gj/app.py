@@ -28,7 +28,7 @@ def signup_page():
 
 ## API
 # 로그인 API
-@app.route('/api/login', methods=['POST'])
+@app.route('/api/SignIn', methods=['POST'])
 def SignIn():
     # 1. 클라이언트로부터 데이터 받아오기
     id_receive = request.form.get('id_give')
@@ -57,9 +57,29 @@ def SignIn():
     else:
         # 사용자가 없다면, 실패 메시지 전송
         return jsonify({'result': 'fail'})
+    
+# [추가] ID 중복 확인 API
+@app.route('/api/CheckId', methods=['POST'])
+def CheckId():
+    id_receive = request.form.get('id_give')
+    existing_id = db.users.find_one({'id': id_receive})
+    if existing_id:
+        return jsonify({'result': 'fail'}) # 중복이면 fail
+    else:
+        return jsonify({'result': 'success'}) # 중복이 아니면 success
+
+# [추가] 닉네임 중복 확인 API
+@app.route('/api/CheckUsername', methods=['POST'])
+def CheckUsername():
+    username_receive = request.form.get('username_give')
+    existing_username = db.users.find_one({'username': username_receive})
+    if existing_username:
+        return jsonify({'result': 'fail'})
+    else:
+        return jsonify({'result': 'success'})
 
 # 회원가입 API
-@app.route('/api/signup', methods=['POST'])
+@app.route('/api/SignUp', methods=['POST'])
 def SignUp():
     # 1. 클라이언트로부터 데이터 받아오기
     username_receive = request.form.get('username_give')
@@ -71,15 +91,7 @@ def SignUp():
     import hashlib
     password_hash = hashlib.sha256(password_receive.encode('utf-8')).hexdigest()
 
-    # 3. 아이디 중복 확인
-    existing_username = db.users.find_one({'username': username_receive})
-    existing_id = db.users.find_one({'id': id_receive})
-    if existing_username:
-        return jsonify({'result': 'fail', 'msg': '이미 존재하는 닉네임입니다.'})
-    if existing_id:
-        return jsonify({'result': 'fail', 'msg': '이미 존재하는 아이디입니다.'})
-
-    # 4. 모든 정보(암호화된 비밀번호 포함)를 DB에 저장
+    # 3. 모든 정보(암호화된 비밀번호 포함)를 DB에 저장
     user = {
         'username': username_receive,
         'password': password_hash, # 암호화된 비밀번호 저장
