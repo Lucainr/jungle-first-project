@@ -21,7 +21,7 @@
         .btn-signup { width: 100%; padding: 15px; font-size: 1.2em; font-weight: 700; color: #fff; background-color: #1BD182; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
         .btn-signup:hover { background-color: #17a76a; }
 
-        /* [추가] 입력창과 중복확인 버튼을 묶는 스타일 */
+        /* 입력창과 중복확인 버튼을 묶는 스타일 */
         .input-group {
             display: flex;
             align-items: center;
@@ -49,7 +49,7 @@
             <label for="id">ID</label>
             <div class="input-group">
                 <input type="text" id="id">
-                <button onclick="check_id()">중복 확인</button>
+                <button onclick="CheckID()">중복 확인</button>
             </div>
         </div>
         <div class="form-group">
@@ -69,18 +69,18 @@
             <label for="username">Username</label>
             <div class="input-group">
                 <input type="text" id="username" placeholder="ex: 10기 홍길동">
-                <button onclick="check_username()">중복 확인</button>
+                <button onclick="CheckUsername()">중복 확인</button>
             </div>
             <p class="hint-text">닉네임은 반드시 기수 + 이름 조합이어야 합니다.</p>
         </div>
 
-        <button type="button" class="btn-signup" onclick="sign_up()">회원가입</button>
+        <button type="button" class="btn-signup" onclick="SignUp()">회원가입</button>
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
-        // [추가] ID 중복 확인 함수
-        function check_id() {
+        // ID 중복 확인 함수
+        function CheckID() {
             let id = $('#id').val();
             if (id === "") {
                 alert("아이디를 입력해주세요.");
@@ -101,8 +101,8 @@
             });
         }
 
-        // [추가] 닉네임 중복 확인 함수
-        function check_username() {
+        // 닉네임 중복 확인 함수
+        function CheckUsername() {
             let username = $('#username').val();
             if (username === "") {
                 alert("닉네임을 입력해주세요.");
@@ -123,8 +123,8 @@
             });
         }
         
-        // [수정] 기존 회원가입 함수 (새로운 규칙 적용)
-        function sign_up() {
+        // 회원가입
+        function SignUp() {
             let username = $('#username').val();
             let id = $('#id').val();
             let password = $('#password').val();
@@ -152,9 +152,14 @@
                 success: function (response) {
                     if (response['result'] === 'success') {
                         alert('회원가입이 완료되었습니다!');
-                        window.location.href = '/';
-                    } else {
-                        // 백엔드에서 msg를 주지 않으므로, 프론트에서 포괄적인 메시지 처리
+                        window.location.href = '/login';
+                    } else if (response['result'] === 'fail_id') {
+                        alert('이미 사용 중인 아이디입니다. 다른 아이디를 사용해주세요.');
+                        $('#id').focus();
+                    } else if (response['result'] === 'fail_username') {
+                        alert('이미 사용 중인 닉네임입니다. 다른 닉네임을 사용해주세요.');
+                        $('#username').focus();
+                    } else {    // 회원가입 실패
                         alert('회원가입에 실패했습니다. 아이디/닉네임 중복 확인해주세요.');
                     }
                 }

@@ -58,7 +58,7 @@ def SignIn():
         # 사용자가 없다면, 실패 메시지 전송
         return jsonify({'result': 'fail'})
     
-# [추가] ID 중복 확인 API
+# ID 중복 확인 API
 @app.route('/api/CheckId', methods=['POST'])
 def CheckId():
     id_receive = request.form.get('id_give')
@@ -68,7 +68,7 @@ def CheckId():
     else:
         return jsonify({'result': 'success'}) # 중복이 아니면 success
 
-# [추가] 닉네임 중복 확인 API
+# 닉네임 중복 확인 API
 @app.route('/api/CheckUsername', methods=['POST'])
 def CheckUsername():
     username_receive = request.form.get('username_give')
@@ -86,6 +86,12 @@ def SignUp():
     id_receive = request.form.get('id_give')
     password_receive = request.form.get('password_give')
     email_receive = request.form.get('email_give')
+
+   # [추가] 서버 단에서 최종 중복 확인
+    if db.users.find_one({'id': id_receive}):
+        return jsonify({'result': 'fail_id'})
+    if db.users.find_one({'username': username_receive}):
+        return jsonify({'result': 'fail_username'})
 
     # 2. 비밀번호 암호화
     import hashlib
