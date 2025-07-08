@@ -1,9 +1,9 @@
 import jwt # jwt 라이브러리 임포트
 import datetime # 유효기간 설정을 위한 라이브러리
-from pymongo import MongoClient # <--- 이 줄을 꼭 추가해줘!
+from pymongo import MongoClient
 from flask import Flask, render_template, request, jsonify # request, jsonify 추가
 
-# JWT를 위한 비밀 키. 아무 문자열이나 괜찮지만, 실제 서비스에선 복잡하게 만들어야 해!
+# JWT를 위한 비밀 키
 SECRET_KEY = 'JUNGLE'
 
 # MongoDB 연결 설정
@@ -12,13 +12,21 @@ db = client.dbjungle # 'dbjungle' 이라는 이름의 DB를 사용
 
 app = Flask(__name__)
 
-# 기본 URL 접속 시 login.html 파일을 보여줌
+
+## 라우팅
+# 기본 URL 접속 시 Login 페이지
 @app.route('/')
 def home():
    return render_template('LoginPage.html')
 
-## API 역할을 하는 부분
+# 회원가입 페이지
+@app.route('/signup')
+def signup_page():
+    return render_template('SignupPage.html')
 
+
+
+## API
 # 로그인 API
 @app.route('/api/login', methods=['POST'])
 def SignIn():
@@ -42,7 +50,7 @@ def SignIn():
             'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)  # 1시간 동안 유효?
         }
         # JWT 생성
-        token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')   # payload와 SECRET_KEY를 합쳐서 암호화된 토큰(문자열)을 인코딩
+        token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')   # payload와 SECRET_KEY를 합쳐서 암호화된 토큰(문자열)을 인코딩?
 
         # 5. 생성한 토큰을 클라이언트에게 보내주기
         return jsonify({'result': 'success', 'token': token})

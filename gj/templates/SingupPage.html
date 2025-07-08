@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>정글 커뮤니티 - 회원가입</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* 기본 스타일 초기화 및 페이지 중앙 정렬 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa; /* 전체 배경색을 약간 회색으로 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 회원가입 폼을 감싸는 컨테이너 */
+        .signup-container {
+            width: 450px;
+            padding: 40px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* '회원가입' 타이틀 */
+        .title {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #1BD182; /* 메인 컬러 */
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* 타이틀 아래 수평선 */
+        hr {
+            border: none;
+            border-top: 1px solid #e9ecef;
+            margin-bottom: 40px;
+        }
+
+        /* 라벨과 입력창 그룹 */
+        .form-group {
+            margin-bottom: 30px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 1.2em;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+        
+        /* 입력창 밑줄 스타일 */
+        .form-group input {
+            width: 100%;
+            border: none;
+            border-bottom: 2px solid #ccc;
+            padding: 10px 2px; /* 위아래 여백과 좌우 여백 */
+            font-size: 1.1em;
+            background-color: transparent;
+            transition: border-color 0.3s; /* 부드러운 효과 */
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-bottom-color: #1BD182; /* 클릭 시 메인 컬러로 변경 */
+        }
+        
+        /* 도움말 텍스트 스타일 */
+        .hint-text {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-top: 8px;
+        }
+
+        /* 회원가입 버튼 */
+        .btn-signup {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #fff;
+            background-color: #1BD182;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-signup:hover {
+            background-color: #17a76a; /* 마우스 올렸을 때 색상 살짝 진하게 */
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <h2 class="title">회원가입</h2>
+        <hr>
+        <div class="form-group">
+            <label for="id">ID</label>
+            <input type="text" id="id">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password">
+            <p class="hint-text">패스워드는 최소 8자 이상, 숫자, 영문대소문자, 특수문자를 각 한개 이상씩 포함하여야 합니다.</p>
+        </div>
+        <div class="form-group">
+            <label for="confirm_password">Confirm Password</label>
+            <input type="password" id="confirm_password">
+        </div>
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="ex: 10기 홍길동">
+            <p class="hint-text">닉네임은 반드시 기수 + 이름 조합이어야 합니다.</p>
+        </div>
+
+        <button type="button" class="btn-signup" onclick="sign_up()">회원가입</button>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        // JavaScript 로직은 이전과 동일!
+        function sign_up() {
+            let username = $('#username').val();
+            let id = $('#id').val();
+            let password = $('#password').val();
+            let confirm_password = $('#confirm_password').val();
+            let email = "default@email.com"; // email 필드가 디자인에 없으므로 임시값 또는 빈 값으로 처리
+
+            if (password !== confirm_password) {
+                alert("비밀번호가 일치하지 않습니다.");
+                $('#confirm_password').focus();
+                return;
+            }
+            if (username === "" || id === "" || password === "") {
+                alert("ID, Password, Username은 필수 항목입니다.");
+                return;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/api/signup",
+                data: {
+                    username_give: username,
+                    id_give: id,
+                    password_give: password,
+                    email_give: email 
+                },
+                success: function (response) {
+                    if (response['result'] === 'success') {
+                        alert(response['msg']);
+                        window.location.href = '/login';
+                    } else {
+                        alert(response['msg']);
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
