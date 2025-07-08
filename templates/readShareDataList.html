@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <title>자료 공유</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+        integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery (integrity 삭제) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <style>
+
+    </style>
+
+    <script>
+        // 문서(document)가 완전히 로드되었을 때(DOM이 준비되었을 때) 지정된 함수를 실행
+        $(document).ready(function (){
+            // 페이지가 로드되면 바로 게시글 목록을 불러오는 함수를 호출
+            readShareDataList();
+        });
+
+        // 서버로부터 게시글 목록 데이터를 받아오는 함수
+        function readShareDataList(){
+            // jQuery의 Ajax를 사용하여 서버에 비동기 GET 요청을 보냄
+            $.ajax({
+                type : "GET", // HTTP 요청 방식을 GET으로 설정
+                url: "/readShareDataList", // 데이터를 요청할 서버의 URL(API 엔드포인트)
+                dataType: "json", // 서버로부터 받을 데이터 타입을 JSON으로 받을 것을 명시
+                success: function(response){
+                    // 서버 응답에서 'shareDatas' 키에 해당하는 게시글 배열을 가져옴
+                    let shareDatas = response["shareDatas"];
+                    // 'shareDatas'가 존재하지 않거나 비어있는 경우, 콘솔에 에러를 출력하고 함수를 종료
+                    if (!shareDatas) {
+                        console.error("No shareDatas in response");
+                        return;
+                    }
+                    // for 루프를 사용하여 받아온 게시글 배열을 순회
+                    for (let i = 0; i < shareDatas.length; i++) { 
+                        // 각 게시글에 대한 정보를 makeList 함수에 전달하여 화면에 표시
+                        makeList(
+                            shareDatas[i]["_id"],
+                            shareDatas[i]["title"],
+                            shareDatas[i]["likes"],
+                            shareDatas[i]["date"],
+                            shareDatas[i]["writer"]
+                        );
+                    }
+                },
+                error: function(xhr, status, error){
+                    // 콘솔에 AJAX 오류 정보를 출력
+                    console.error("AJAX Error: ", status, error);
+                }
+            });
+        }
+
+        // 개별 게시글 데이터를 받아 HTML 테이블 행(row)을 생성하는 함수
+        function makeList(id, title, likes, date, writer){
+            // 서버로부터 받은 타임스탬프(date)를 한국 시간 형식의 문자열로 변환
+            let formattedDate = new Date(parseInt(date)).toLocaleString("ko-KR");
+            // 백틱(`)을 사용한 템플릿 리터럴로 동적인 HTML 문자열을 생성
+            // 각 게시글은 테이블의 한 행(<tr>)으로 표현
+            // 제목(title)에는 해당 게시글의 상세 페이지로 이동하는 링크(<a>)가 포함
+            let shareDataHtml = `
+                <tr>
+                    <th scope="row">
+                        <a href="http://localhost:5001/shareDataBoard/${id}">${title}</a>
+                    </th>
+                    <td>${likes}</td>
+                    <td>${formattedDate}</td>
+                    <td>${writer}</td>
+                </tr>
+            `;
+            // 생성된 HTML을 id가 'shareDataList'인 tbody 요소에 추가(append)
+            $("#shareDataList").append(shareDataHtml);
+        }
+
+        // '글 작성' 버튼 클릭 시 호출될 함수
+        function createShareData(){
+            // 새로운 게시글을 작성하는 페이지('/createShareData')로 이동
+            window.location.href = "/createShareData";
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <button class="btn btn-success float" onclick="createShareData();">글 작성</button>
+        </div>
+        <table class="table">
+            <tbody id="shareDataList">
+                <!-- 이 곳에 자바스크립트를 통해 동적으로 게시글 목록이 추가됨 -->
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
