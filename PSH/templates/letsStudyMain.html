@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>스터디를 하자</title>
+    <style>
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 8px;
+            margin-left: 500px;
+            width: 1000px;
+        }
+        .cards-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+    </style>
+
+    <script>
+
+    </script>
+</head>
+<body>
+    <p style = "margin-top: 200px;"></p>
+    <h1>스터디를 하자</h1>
+    <button style="margin-right: 10px;" onclick="location.href='/submit'">등록</button>
+    <p style = "margin-top: 150px;"></p>
+    <div class="cards-container">
+        {% for study in studies %}
+
+        <div class="card" id="{{ study._id }}">
+            <a href="{{ url_for('study_detail', study_id=study._id|string)}}" style="text-decoration:none; color:inherit;"> {{ study.title }}</a>
+            <h3>모집정원: {{study.number }} /  {{ study.capacity }}</h3>
+        </div>
+        <p></p>
+
+        {% endfor %}
+
+
+
+    </div>
+</body>
+</html>
