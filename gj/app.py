@@ -87,17 +87,17 @@ def SignUp():
     password_receive = request.form.get('password_give')
     email_receive = request.form.get('email_give')
 
-   # [추가] 서버 단에서 최종 중복 확인
+   # 2. 서버 단에서 최종 중복 확인
     if db.users.find_one({'id': id_receive}):
         return jsonify({'result': 'fail_id'})
     if db.users.find_one({'username': username_receive}):
         return jsonify({'result': 'fail_username'})
 
-    # 2. 비밀번호 암호화
+    # 3. 비밀번호 암호화
     import hashlib
     password_hash = hashlib.sha256(password_receive.encode('utf-8')).hexdigest()
 
-    # 3. 모든 정보(암호화된 비밀번호 포함)를 DB에 저장
+    # 4. 모든 정보(암호화된 비밀번호 포함)를 DB에 저장
     user = {
         'username': username_receive,
         'password': password_hash, # 암호화된 비밀번호 저장
