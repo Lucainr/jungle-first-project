@@ -38,18 +38,30 @@
             padding: 20px;
         }
 
-        /* 오른쪽 패널에만 왼쪽 테두리(구분선) 추가 */
+        /* 오른쪽 패널에 position: relative 추가 및 border-left 제거 */
         .right-panel {
-            border-left: 1px solid #e0e0e0;
+            position: relative;
+        }
+
+        /* 가상요소(::before)를 사용해 길이 조절이 가능한 구분선 생성 */
+        .right-panel::before {
+            content: ""; /* 가상요소 필수 속성 */
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%); /* 수직 중앙 정렬 */
+            height: 900px; /* 선의 높이 (길이) 조절 */
+            width: 1px;
+            background-color: #e0e0e0;
         }
 
         /* 왼쪽 패널 컨텐츠 정렬 */
         .left-content {
-            text-align: center;
+            text-align: left;
         }
 
         .left-content h2 {
-            font-size: 2.5em;
+            font-size: 2.9em;
             font-weight: 700;
             color: #1de9b6; /* 디자인의 메인 컬러 */
             margin-bottom: 10px;
@@ -67,12 +79,12 @@
 
         /* 오른쪽 패널 폼(ID/PW) 스타일 */
         .login-form {
-            width: 320px;
+            width: 380px;
         }
 
         .login-form label {
-            font-size: 1.5em;
-            font-weight: 500;
+            font-size: 1.8em;
+            font-weight: bold;
             color: #333;
             display: block;
             margin-bottom: 40px;
@@ -140,8 +152,8 @@
             <div class="left-content">
                 <h2>잠깐!<br>크래프톤 정글러이신가요?</h2>
                 <p>정글러시라면 正文에 가입하셔서<br>다양한 커뮤니케이션과 각종 모임에 참여하세요!</p>
-                <a type="button" class="btn btn-signup" onclick="openAuthPopup()">회원가입</a>
                 <p class="footnote">*정글러가 아니시면 회원가입이 제한됩니다.</p>
+                <a type="button" class="btn btn-signup" onclick="openAuthPopup()">회원가입</a>
             </div>
         </div>
 
