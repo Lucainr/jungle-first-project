@@ -153,11 +153,51 @@
                 <label for="password">Password</label>
                 <input type="password" id="password">
 
-                <button class="btn btn-login">로그인</button>
+                <button type="button" class="btn btn-login" onclick="login()">로그인</button>
                 <a href="#" class="find-link">아이디/비밀번호 찾기</a>
             </div>
         </div>
     </div>
+
+    <script>
+        function login() {
+            // 1. 입력된 ID와 비밀번호 값을 가져온다.
+            let id = $('#id').val();
+            let password = $('#password').val();
+
+            // 2. ID 또는 비밀번호가 비어있는지 확인
+            if (id === "" || password === "") {
+                alert("아이디와 비밀번호를 모두 입력해주세요.");
+                return;
+            }
+            
+            // 3. Ajax를 이용해 서버의 /api/login 으로 POST 요청을 보낸다.
+            $.ajax({
+                type: "POST",
+                url: "/api/login",
+                data: {
+                    id_give: id, 
+                    password_give: password
+                },
+                success: function (response) {
+                    // 4. 서버로부터 받은 응답을 처리한다.
+                    if (response['result'] == 'success') {
+                        // 로그인이 성공하면, 서버가 보내준 토큰(token)을 'mytoken'라는 이름으로 쿠키에 저장
+                        $.cookie('mytoken', response['token'], {path: '/'});
+                        alert('로그인 성공!');
+                        // 로그인 성공 시, 메인 페이지로 이동
+                        window.location.href = '/main'; 
+                    } else {
+                        // 로그인 실패 시, 서버가 보내준 에러 메시지를 alert로 보여줌
+                        alert(response['msg']);
+                    }
+                }
+            });
+        }
+    </script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
 
 </body>
 </html>
