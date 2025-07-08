@@ -70,6 +70,7 @@
             transition: border-color 0.3s; /* 부드러운 효과 */
         }
 
+        /* 입력창에 포커스 시 밑줄 색상 변경 */
         .form-group input:focus {
             outline: none;
             border-bottom-color: #1BD182; /* 클릭 시 메인 컬러로 변경 */
@@ -118,32 +119,39 @@
             <label for="confirm_password">Confirm Password</label>
             <input type="password" id="confirm_password">
         </div>
+
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="text" id="email">
+        </div>
         <div class="form-group">
             <label for="username">Username</label>
             <input type="text" id="username" placeholder="ex: 10기 홍길동">
             <p class="hint-text">닉네임은 반드시 기수 + 이름 조합이어야 합니다.</p>
         </div>
 
-        <button type="button" class="btn-signup" onclick="sign_up()">회원가입</button>
+        <button type="button" class="btn-signup" onclick="SignUp()">회원가입</button>
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
-        // JavaScript 로직은 이전과 동일!
-        function sign_up() {
+        function SignUp() {
+            // 입력값 가져오기
             let username = $('#username').val();
             let id = $('#id').val();
             let password = $('#password').val();
             let confirm_password = $('#confirm_password').val();
-            let email = "default@email.com"; // email 필드가 디자인에 없으므로 임시값 또는 빈 값으로 처리
+            let email = $('#email').val();
 
             if (password !== confirm_password) {
                 alert("비밀번호가 일치하지 않습니다.");
                 $('#confirm_password').focus();
                 return;
             }
-            if (username === "" || id === "" || password === "") {
-                alert("ID, Password, Username은 필수 항목입니다.");
+
+            // 입력값 빈칸 체크
+            if (username === "" || id === "" || password === "" || email === "") {
+                alert("모든 항목을 입력해주세요.");
                 return;
             }
 
@@ -154,14 +162,16 @@
                     username_give: username,
                     id_give: id,
                     password_give: password,
-                    email_give: email 
+                    email_give: email
                 },
+                // 서버로부터 응답 받기
+                // 성공 시 처리
                 success: function (response) {
                     if (response['result'] === 'success') {
-                        alert(response['msg']);
-                        window.location.href = '/login';
+                        alert('회원가입이 완료되었습니다!');
+                        window.location.href = '/'; // 회원가입 후 로그인 페이지로 이동
                     } else {
-                        alert(response['msg']);
+                        alert('회원가입에 실패하였습니다.');
                     }
                 }
             });

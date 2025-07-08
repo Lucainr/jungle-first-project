@@ -56,7 +56,7 @@ def SignIn():
         return jsonify({'result': 'success', 'token': token})
     else:
         # 사용자가 없다면, 실패 메시지 전송
-        return jsonify({'result': 'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
+        return jsonify({'result': 'fail'})
 
 # 회원가입 API
 @app.route('/api/signup', methods=['POST'])
@@ -88,7 +88,7 @@ def SignUp():
     }
     db.users.insert_one(user)
 
-    return jsonify({'result': 'success', 'msg': '회원가입이 완료되었습니다!'})
+    return jsonify({'result': 'success'})
 
 if __name__ == '__main__':
    app.run('0.0.0.0', port=9392, debug=True)
