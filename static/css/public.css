@@ -57,6 +57,10 @@ a {
     font-size: 0.9em;
 }
 
+.navbar .user-actions a {
+    color: black; /* 로그아웃 링크 색상 변경 */
+}
+
 /* 회원정보수정 버튼 스타일 */
 .navbar .user-actions .btn-mypage {
     background-color: #1BD182;

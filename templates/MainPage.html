@@ -172,7 +172,7 @@
 
         /* 메달 이미지 크기 키우기 */
         .jungler-section .medal-img {
-            height: 120px;
+            height: 150px;
         }
 
         /* 정글러 정보 스타일 */
@@ -184,7 +184,7 @@
         /* 정글러 정보 텍스트 스타일 */
         .jungler-section .jungler-info p {
             margin: 0;
-            font-size: 1.2em;
+            font-size: 1.5em;
             color: #495057;
         }
 
@@ -339,8 +339,8 @@
                     <div class="username" id="profile-username"></div>
                 </div>
                 <nav class="side-nav">
-                    <a href="#">추천한 게시글</a>
-                    <a href="#">내가 쓴 글</a>
+                    <a href="/recommendPost">추천한 게시글</a>
+                    <a href="/writtenPost">내가 쓴 글</a>
                 </nav>
             </div>
             <div class="main-content">
@@ -365,7 +365,9 @@
                             </div>
                             <ul>
                                 {% for post in share_posts %}
-                                <li>{{ post.title }}</li>
+                                <li>
+                                    <a href="{{ url_for('shareDataBoard', shareId=post._id) }}">{{ post.title }}</a>
+                                </li>
                                 {% else %}
                                 <li>아직 게시글이 없어요.</li>
                                 {% endfor %}
@@ -378,7 +380,9 @@
                             </div>
                             <ul>
                                 {% for post in qna_posts %}
-                                <li>{{ post.title }}</li>
+                                <li>
+                                    <a href="{{ url_for('qnaBoard', shareId=post._id) }}">{{ post.title }}</a>
+                                </li>
                                 {% else %}
                                 <li>아직 게시글이 없어요.</li>
                                 {% endfor %}
@@ -391,7 +395,9 @@
                             </div>
                             <ul>
                                 {% for post in study_posts %}
-                                <li>{{ post.title }}</li>
+                                <li>
+                                    <a href="{{ url_for('study_detail', study_id=post._id) }}">{{ post.title }}</a>
+                                </li>
                                 {% else %}
                                 <li>아직 게시글이 없어요.</li>
                                 {% endfor %}
@@ -430,7 +436,6 @@
         });
     </script>
 
-    {% block script %}{% endblock %}
 </body>
 
 </html>
