@@ -34,7 +34,7 @@ def get_user_id_from_token():
         return payload['id']
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
-     
+
 ## 라우팅
 # 기본 URL 접속 시 Login 페이지
 @app.route('/')
@@ -244,6 +244,22 @@ def getUserInfo():
       return jsonify({'result': 'fail', 'msg': '토큰이 만료되었습니다.'})
    except jwt.InvalidTokenError:
       return jsonify({'result': 'fail', 'msg': '유효하지 않은 토큰입니다.'})
+   
+# 내 정보 가져오기 API
+@app.route('/api/getMyInfo', methods=['GET'])
+def getMyInfo():
+    token_receive = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+        user_id = payload['id']
+        
+        # DB에서 해당 ID의 사용자 정보를 찾음 (비밀번호는 제외)
+        user_info = db.users.find_one({'id': user_id}, {'_id': 0, 'password': 0})
+        
+        return jsonify({'result': 'success', 'user_info': user_info})
+    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        return jsonify({'result': 'fail', 'msg': '로그인이 필요합니다.'})
+
       
    
 # '/createShareData' URL에 대한 GET 요청을 처리
@@ -458,16 +474,38 @@ def main():
 
 @app.route('/study/<study_id>')
 def study_detail(study_id):
+
+    # 1. 쿠키에서 토큰 꺼내기
+    token_receive = request.cookies.get('mytoken')
+
+        
+    try:
+            # 2. 토큰 디코딩
+            payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+            user_id = payload['id']
+            user_data = db.users.find_one({'id': user_id})
+            username = user_data['username'] if user_data else "알 수 없음"
+            
+    except (jwt.ExpiredSignatureError, jwt.DecodeError, jwt.InvalidTokenError):
+            user_id = "알 수 없음"
+            username = "알 수 없음"
+
+
+    #user에서 data 받아오기
+    user_data = db.users.find_one({'id' : user_id})
+
+
     try: #ID는 원래 string 타입이 아님 따라서 변환 필요
         obj_id = ObjectId(study_id)
     except:
         return "유효하지 않은 ID입니다.", 400
     #아이디 찾으면
     study = db.studies.find_one({'_id': obj_id})
+
     if not study:
         return "존재하지 않는 스터디입니다.", 404
     #studyDetail에게 study 값 전달
-    return render_template('studyDetail.html', study=study)
+    return render_template('studyDetail.html', study=study, user_data=user_data, current_user_id=user_id)
 
 
 @app.route('/study/<study_id>/edit', methods=['GET', 'POST'])
@@ -500,7 +538,6 @@ def submit_study():
     if request.method == 'POST':
         # 1. 쿠키에서 토큰 꺼내기
         token_receive = request.cookies.get('mytoken')
-
         
         try:
             # 2. 토큰 디코딩
@@ -543,6 +580,7 @@ def submit_study():
     else:
         #studies = list(db.studies.find({}, {'_id': False}))
         #return render_template('result.html', studies=studies)
+
         return render_template('register.html')
     
 
@@ -567,17 +605,20 @@ def delete_study():
 def give_num(study_id):
 
     id = request.form.get('_id')
-    #capacity = request.form.get('capacity')
+
     capacity = int(request.form.get('capacity', 0))
 
     try:
-        id = ObjectId(id)
+        Obj_id = ObjectId(id)
     except:
         return "유효하지 않은 ID입니다.", 400
+    
 
-    get_Id = db.studies.find_one({'_id': id})
-    if not get_Id:
+    study = db.studies.find_one({'_id': Obj_id})
+    if not study:
         return "해당 ID가 존재하지 않습니다.", 404
+    
+
     
     # 2. JWT에서 신청자 정보 꺼내기
     token = request.cookies.get('mytoken')
@@ -587,7 +628,7 @@ def give_num(study_id):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         applicant_id = payload.get('id') # 토큰에서 꺼낸 payload 에서 id를 꺼냄
-
+        current_user_id = payload.get('id')
         user_data = db.users.find_one({'id': applicant_id})
         applicant_username = user_data['username'] if user_data and 'username' in user_data else "알 수 없음"
 
@@ -595,12 +636,16 @@ def give_num(study_id):
         applicant_id = '알 수 없음'
         applicant_username = '알 수 없음'
 
+    # 같은 아이디 중복 신청 체크
+    applicants = study.get('applicants', [])
+    if any(applicant['applied_id'] == current_user_id for applicant in applicants):
+        return render_template('studyDetail.html', study=study, current_user_id=current_user_id, alert_user="이미 신청하셨습니다!")
     
-    new_number = get_Id.get('number', 0) + 1
+    new_number = study.get('number', 0) + 1
     ##정원초과면 alert 나오게 함 # 3. 정원 체크
     if new_number > capacity:
         study = db.studies.find_one({'_id': id})
-        return render_template('studyDetail.html', alert_message="정원을 초과하였습니다!" ,study=study)
+        return render_template('studyDetail.html', alert_number="정원을 초과하였습니다!" ,study=study,current_user_id=applicant_id)
     
     else:
         db.studies.update_one(
@@ -611,9 +656,9 @@ def give_num(study_id):
         }
         )
         #새로고침의 효과
-        updated_study = db.studies.find_one({'_id': id})
+        updated_study = db.studies.find_one({'_id': Obj_id})
 
-        return render_template('studyDetail.html', study=updated_study)
+        return render_template('studyDetail.html', study=updated_study, current_user_id=applicant_id, alert_new="신청되었습니다!")
 
 # 이 스크립트가 직접 실행될 때만 아래 코드를 실행
 # (다른 파일에서 이 파일을 import할 때는 실행되지 않음)

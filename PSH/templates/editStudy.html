@@ -11,7 +11,7 @@
         <input type="text" name="title" value="{{ study.title }}" required><br><br>
 
         <label>모집정원:</label><br>
-        <input type="number" name="capacity" value="{{ study.capacity }}" required><br><br>
+        <input type="number" name="capacity" value="{{ study.capacity }}" required min="2"><br><br>
 
         <label>내용:</label><br>
         <textarea name="post" rows="10" cols="50" required>{{ study.post }}</textarea><br><br>
