@@ -5,6 +5,7 @@
 # jsonify: 파이썬 딕셔너리를 JSON 응답으로 변환하기 위함
 import jwt
 import datetime
+import math # 총 페이지 수를 계산하기 위한 math 라이브러리
 from flask import Flask, request, render_template, jsonify
 app = Flask(__name__)
 
@@ -172,17 +173,9 @@ def addShareData():
 # 이 페이지는 모든 게시글 목록을 보여주는 역할
 @app.route('/shareDataBoardList')
 def shareDataBoardList():
-   return render_template('readShareDataList.html')
-
-import math # 총 페이지 수를 계산하기 위한 math 라이브러리
-
-# '/readShareDataList' URL에 대한 GET 요청을 처리
-# 이 함수는 요청된 페이지에 해당하는 게시글 데이터와 전체 페이지 수를 JSON으로 반환
-@app.route('/readShareDataList')
-def readShareDataList():
    # 클라이언트로부터 'page' 파라미터를 받아옵니다. 없으면 기본값은 1, 타입은 정수
    page = request.args.get('page', 1, type=int)
-   
+
    # 한 페이지에 보여줄 게시글의 수를 10으로 설정
    limit = 10
    # 건너뛸 게시글의 수를 계산 (예: 3페이지의 경우 (3-1)*10 = 20개를 건너뜁니다)
@@ -195,7 +188,7 @@ def readShareDataList():
 
    # MongoDB에서 데이터를 조회할 때, 계산된 offset만큼 건너뛰고 limit만큼만 가져옴
    paginated_data = list(db.shareData.find({}).sort('date', -1).skip(offset).limit(limit))
-   
+
    # 각 게시글마다 writer의 username을 찾아서 추가
    for item in paginated_data:
       item['_id'] = str(item['_id'])
@@ -207,14 +200,8 @@ def readShareDataList():
          item['writerUsername'] = user.get('username')
       else:
          item['writerUsername'] = "알 수 없음"  # 만약 없으면 기본값
-   
-   # 성공 여부, 현재 페이지의 게시글 데이터, 그리고 전체 페이지 수를 함께 JSON으로 반환
-   return jsonify({
-      'result': 'success', 
-      'shareDatas': paginated_data,
-      'total_pages': total_pages
-      })
 
+   return render_template('readShareDataList.html', shareDatas=paginated_data, total_pages=total_pages)
 
 # MongoDB의 ObjectId를 다루기 위해 bson 라이브러리에서 ObjectId를 가져옴
 from bson import ObjectId

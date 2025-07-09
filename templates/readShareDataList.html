@@ -140,93 +140,9 @@
     </style>
 
     <script>
-        // 문서(document)가 완전히 로드되었을 때(DOM이 준비되었을 때) 지정된 함수를 실행합니다.
-        $(document).ready(function (){
-            // 페이지가 로드되면 첫 번째 페이지의 게시글 목록을 불러옵니다.
-            readShareDataList(1);
-        });
-
-        // 특정 페이지의 게시글 목록 데이터를 서버로부터 받아오는 함수
-        function readShareDataList(page){
-            // jQuery의 Ajax를 사용하여 서버에 비동기 GET 요청을 보냄
-            $.ajax({
-                type : "GET", // HTTP 요청 방식을 GET으로 설정
-                url: "/readShareDataList?page=" + page, // 데이터를 요청할 URL에 페이지 번호를 파라미터로 추가
-                dataType: "json", // 서버로부터 받을 데이터 타입을 JSON으로 기대
-                success: function(response){
-                    // 요청이 성공하면, 먼저 기존의 게시글 목록을 비움
-                    $('#shareDataList').empty();
-
-                    // 서버 응답에서 'shareDatas' 키에 해당하는 게시글 배열을 가져옴
-                    let shareDatas = response["shareDatas"];
-                    if (!shareDatas) {
-                        console.error("No shareDatas in response");
-                        return;
-                    }
-                    // for 루프를 사용하여 받아온 게시글 배열을 순회
-                    for (let i = 0; i < shareDatas.length; i++) { 
-                        // 각 게시글에 대한 정보를 makeList 함수에 전달하여 화면에 표시
-                        makeList(
-                            shareDatas[i]["_id"],
-                            shareDatas[i]["title"],
-                            shareDatas[i]["likes"],
-                            shareDatas[i]["date"],
-                            shareDatas[i]["writerUsername"]
-                        );
-                    }
-
-                    // 서버로부터 받은 전체 페이지 수와 현재 페이지 번호를 사용하여 페이지네이션 제작
-                    let total_pages = response['total_pages'];
-                    drawPagination(total_pages, page);
-                },
-                error: function(xhr, status, error){
-                    console.error("AJAX Error: ", status, error);
-                }
-            });
-        }
-
-        // 개별 게시글 데이터를 받아 HTML 테이블 행(row)을 생성하는 함수
-        function makeList(id, title, likes, date, writerUsername){
-            // 서버로부터 받은 타임스탬프(date)를 한국 시간 형식의 문자열로 변환
-            let formattedDate = new Date(parseInt(date)).toLocaleString("ko-KR");
-            // 백틱(`)을 사용한 템플릿 리터럴로 동적인 HTML 문자열을 생성
-            let shareDataHtml = `
-                <tr>
-                    <th scope="row">
-                        <a href="http://localhost:5001/shareDataBoard/${id}">${title}</a>
-                    </th>
-                    <td>${likes}</td>
-                    <td>${formattedDate}</td>
-                    <td>${writerUsername}</td>
-                </tr>
-            `;
-            // 생성된 HTML을 id가 'shareDataList'인 tbody 요소에 추가(append)
-            $("#shareDataList").append(shareDataHtml);
-        }
-
-        // 페이지네이션 UI를 동적으로 생성하는 함수
-        function drawPagination(total_pages, current_page) {
-            // 먼저 기존의 페이지네이션 내용을 비움
-            $('#pagination').empty();
-
-            // for 루프를 돌며 전체 페이지 수만큼 페이지 번호 버튼을 생성
-            for (let i = 1; i <= total_pages; i++) {
-                // 현재 보고 있는 페이지와 루프의 페이지 번호가 같으면 'active' 클래스를, 아니면 빈 문자열을 할당
-                let active_class = (i === current_page) ? 'active' : '';
-                // 각 페이지 번호에 해당하는 li와 a 태그를 생성합니다. a 태그의 onclick 이벤트에는 readShareDataList 함수를 호출하도록 설정
-                let page_link = `
-                    <li class="page-item ${active_class}">
-                        <a class="page-link" href="#" onclick="readShareDataList(${i})">${i}</a>
-                    </li>
-                `;
-                // 생성된 페이지 번호 버튼을 pagination 컨테이너에 추가
-                $('#pagination').append(page_link);
-            }
-        }
-
-        // '글 작성' 버튼 클릭 시 호출될 함수
+        // '글 작성' 버튼 클릭 시 호출될 함수입니다.
         function createShareData(){
-            // 새로운 게시글을 작성하는 페이지('/createShareData')로 이동합
+            // 새로운 게시글을 작성하는 페이지('/createShareData')로 이동합니다.
             window.location.href = "/createShareData";
         }
     </script>
@@ -251,12 +167,34 @@
 
             <table class="table">
                 <tbody id="shareDataList">
-                    <!-- 자바스크립트로 동적 추가 -->
+                    <!-- 서버에서 전달받은 shareDatas를 Jinja2 for 루프로 순회하며 테이블 행을 생성합니다. -->
+                    {% for item in shareDatas %}
+                    <tr>
+                        <th scope="row">
+                            <!-- url_for를 사용해 게시글 상세 페이지로의 링크를 생성합니다. -->
+                            <a href="{{ url_for('shareDataBoard', shareId=item._id) }}">{{ item.title }}</a>
+                        </th>
+                        <td>{{ item.likes }}</td>
+                        <td>{{ item.formatted_date }}</td>
+                        <td>{{ item.writerUsername }}</td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
 
             <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center" id="pagination"></ul>
+                <ul class="pagination justify-content-center" id="pagination">
+                    <!-- 서버에서 전달받은 페이지 정보로 Jinja2 for 루프를 순회하며 페이지네이션 버튼을 생성합니다. -->
+                    {% for page_num in range(1, total_pages + 1) %}
+                        {% if page_num == current_page %}
+                            <!-- 현재 페이지일 경우 active 클래스를 추가하여 강조 표시합니다. -->
+                            <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                        {% else %}
+                            <!-- 다른 페이지일 경우 해당 페이지로 이동하는 링크를 생성합니다. -->
+                            <li class="page-item"><a class="page-link" href="{{ url_for('shareDataBoardList', page=page_num) }}">{{ page_num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
             </nav>
         </div>
     </div>
