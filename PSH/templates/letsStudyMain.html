@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8" />
     <title>스터디를 하자</title>
+
+    <!-- 부트스트랩 링크 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+        integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+
     <style>
         .card {
             border: 1px solid #ccc;
@@ -24,9 +29,10 @@
 </head>
 <body>
     <p style = "margin-top: 200px;"></p>
-
-    <h1>스터디를 하자</h1>
-    <button style="margin-right: 10px;" onclick="location.href='/submitStudy'">등록</button>
+    <h1  style="display: flex; justify-content: flex-end; margin-right: 800px;">스터디를 하자</h1>
+    <div style="display: flex; justify-content: flex-end; margin-right: 600px;">
+    <button class="btn btn-primary"  style ="background-color: rgb(103, 190, 103); width : 100px; border: none;" onclick="location.href='/submitStudy'">등록</button>
+    </div>
     <!-- app.py 에 저장된 flash 내용 필요시 alert 울리게 -->
     {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -56,5 +62,9 @@
         {% endfor %} 
 
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct"
+        crossorigin="anonymous"></script>
 </body>
 </html>
