@@ -1020,8 +1020,149 @@ def getQnaLikeStatus(shareId):
     
     return jsonify({'result': 'success', 'likes': current_likes, 'liked': liked_status})
 
+@app.route('/recommendPost')
+# 추천 게시글 출력
+@app.route('/recommendPost')
+def recommendPost():
+    user_id = get_user_id_from_token()
+    if user_id is None:
+        return redirect(url_for("home")) # 로그인 페이지로 리다이렉트
+
+    recommended_posts = []
+
+    # db.qnaBoard에서 사용자가 좋아요를 누른 게시글 조회
+    qna_liked_posts = list(db.qnaBoard.find({'liked_by': user_id}))
+    for post in qna_liked_posts:
+        post['_id'] = str(post['_id'])
+        post['board_type'] = 'qna' # 게시판 종류 추가
+        
+        # 작성자 username 가져오기
+        writer_id = post.get('writer')
+        user = db.users.find_one({'id': writer_id})
+        post['writerUsername'] = user.get('username') if user else "알 수 없음"
+
+        # 날짜 형식 변환
+        try:
+            date_timestamp = post.get('date')
+            dt_object = datetime.fromtimestamp(int(date_timestamp) / 1000)
+            post['formatted_date'] = dt_object.strftime('%Y-%m-%d %H:%M')
+        except (ValueError, TypeError):
+            post['formatted_date'] = '날짜 없음'
+        
+        recommended_posts.append(post)
+
+    # db.shareData에서 사용자가 좋아요를 누른 게시글 조회
+    share_liked_posts = list(db.shareData.find({'liked_by': user_id}))
+    for post in share_liked_posts:
+        post['_id'] = str(post['_id'])
+        post['board_type'] = 'share' # 게시판 종류 추가
+
+        # 작성자 username 가져오기
+        writer_id = post.get('writer')
+        user = db.users.find_one({'id': writer_id})
+        post['writerUsername'] = user.get('username') if user else "알 수 없음"
+
+        # 날짜 형식 변환
+        try:
+            date_timestamp = post.get('date')
+            dt_object = datetime.fromtimestamp(int(date_timestamp) / 1000)
+            post['formatted_date'] = dt_object.strftime('%Y-%m-%d %H:%M')
+        except (ValueError, TypeError):
+            post['formatted_date'] = '날짜 없음'
+
+        recommended_posts.append(post)
+    
+    # 날짜 기준으로 최신순 정렬
+    recommended_posts.sort(key=lambda x: x.get('date', 0), reverse=True)
+
+    # 페이지네이션을 위한 변수 계산
+    page = request.args.get('page', 1, type=int)
+    limit = 10 # 한 페이지에 보여줄 게시글 수
+    offset = (page - 1) * limit
+
+    # 전체 게시글 수를 계산 (좋아요 누른 게시글 전체)
+    total_count = len(recommended_posts)
+    total_pages = math.ceil(total_count / limit)
+
+    # 현재 페이지에 해당하는 게시글만 슬라이싱
+    paginated_recommended_posts = recommended_posts[offset:offset + limit]
+
+    return render_template('recommendPost.html',
+                           recommended_posts=paginated_recommended_posts,
+                           total_pages=total_pages,
+                           page=page)
+
 # 이 스크립트가 직접 실행될 때만 아래 코드를 실행
 # (다른 파일에서 이 파일을 import할 때는 실행되지 않음)
+# 내가 쓴 글 출력
+@app.route('/writtenPost')
+def writtenPosts():
+    user_id = get_user_id_from_token()
+    if user_id is None:
+        return redirect(url_for("home")) # 로그인 페이지로 리다이렉트
+
+    written_posts = []
+
+    # db.qnaBoard에서 사용자가 작성한 게시글 조회
+    qna_authored_posts = list(db.qnaBoard.find({'writer': user_id}))
+    for post in qna_authored_posts:
+        post['_id'] = str(post['_id'])
+        post['board_type'] = 'qna' # 게시판 종류 추가
+        
+        # 작성자 username 가져오기 (이미 writer 필드에 user_id가 있으므로, user_id로 username을 찾음)
+        user = db.users.find_one({'id': user_id})
+        post['writerUsername'] = user.get('username') if user else "알 수 없음"
+
+        # 날짜 형식 변환
+        try:
+            date_timestamp = post.get('date')
+            dt_object = datetime.fromtimestamp(int(date_timestamp) / 1000)
+            post['formatted_date'] = dt_object.strftime('%Y-%m-%d %H:%M')
+        except (ValueError, TypeError):
+            post['formatted_date'] = '날짜 없음'
+        
+        written_posts.append(post)
+
+    # db.shareData에서 사용자가 작성한 게시글 조회
+    share_authored_posts = list(db.shareData.find({'writer': user_id}))
+    for post in share_authored_posts:
+        post['_id'] = str(post['_id'])
+        post['board_type'] = 'share' # 게시판 종류 추가
+
+        # 작성자 username 가져오기
+        user = db.users.find_one({'id': user_id})
+        post['writerUsername'] = user.get('username') if user else "알 수 없음"
+
+        # 날짜 형식 변환
+        try:
+            date_timestamp = post.get('date')
+            dt_object = datetime.fromtimestamp(int(date_timestamp) / 1000)
+            post['formatted_date'] = dt_object.strftime('%Y-%m-%d %H:%M')
+        except (ValueError, TypeError):
+            post['formatted_date'] = '날짜 없음'
+
+        written_posts.append(post)
+    
+    # 날짜 기준으로 최신순 정렬
+    written_posts.sort(key=lambda x: x.get('date', 0), reverse=True)
+
+    # 페이지네이션을 위한 변수 계산
+    page = request.args.get('page', 1, type=int)
+    limit = 10 # 한 페이지에 보여줄 게시글 수
+    offset = (page - 1) * limit
+
+    # 전체 게시글 수를 계산
+    total_count = len(written_posts)
+    total_pages = math.ceil(total_count / limit)
+
+    # 현재 페이지에 해당하는 게시글만 슬라이싱
+    paginated_written_posts = written_posts[offset:offset + limit]
+
+    return render_template('writtenPost.html',
+                           written_posts=paginated_written_posts,
+                           total_pages=total_pages,
+                           page=page)
+
 if __name__ == '__main__':   
     # Flask 개발 서버를 실행
     # '0.0.0.0'은 모든 IP 주소에서 접근 가능
