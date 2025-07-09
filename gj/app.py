@@ -35,10 +35,6 @@ def signup_page():
 def findAccountPage():
     return render_template('FindAccountPopup.html')
 
-@app.route('/test')
-def test():
-    return render_template('layout.html')
-
 @app.route('/main')
 def mainPage():
     token_receive = request.cookies.get('mytoken')
