@@ -56,24 +56,40 @@ def findAccountPage():
 def mainPage():
     token_receive = request.cookies.get('mytoken')
     try:
-        # --- 1. 이달의 정글러 찾기 ---
-        # 이번 달 1일과 마지막 날 계산
-        now = datetime.now()
-        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        end_of_month = start_of_month + relativedelta(months=1) - timedelta(seconds=1)
+        jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
 
-        # MongoDB Aggregation Pipeline을 사용해 가장 좋아요를 많이 받은 사용자 찾기
+        # --- 1. 이달의 정글러 찾기 (매월 1일 기준) ---
+        # now = datetime.now()
+        # start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        # end_of_month = start_of_month + relativedelta(months=1) - timedelta(seconds=1)
+
+        # pipeline = [
+        #     # [수정] 날짜 필터링($match) 로직 추가
+        #     {'$match': {'date': {'$gte': start_of_month, '$lte': end_of_month}}},
+        #     {'$unionWith': {
+        #         'coll': 'qnaBoard', 
+        #         'pipeline': [{'$match': {'date': {'$gte': start_of_month, '$lte': end_of_month}}}]
+        #     }},
+        #     {'$sort': {'total_likes': -1}},
+        #     {'$limit': 1}
+        # ]
+
+        # --- 2. 역대 정글러 찾기 (날짜 제한 없음) ---
         pipeline = [
-            {'$match': {'created_at': {'$gte': start_of_month, '$lte': end_of_month}}},
-            {'$group': {'_id': '$author_id', 'total_likes': {'$sum': '$likes'}, 'post_title': {'$first': '$title'}}},
+            {'$unionWith': {'coll': 'qnaBoard'}},
+            {'$group': {
+                '_id': '$writer', 
+                'total_likes': {'$sum': '$likes'},
+                'post_title': {'$first': '$title'}
+            }},
             {'$sort': {'total_likes': -1}},
             {'$limit': 1}
         ]
-        result = list(db.posts.aggregate(pipeline))
-        
+        result = list(db.shareData.aggregate(pipeline))
         jungler_of_month = None
         if result:
             top_user_id = result[0]['_id']
+            # users 컬렉션에서 사용자 이름(username) 찾아오기
             top_user = db.users.find_one({'id': top_user_id})
             if top_user:
                 jungler_of_month = {
@@ -81,10 +97,11 @@ def mainPage():
                     'post_title': result[0]['post_title']
                 }
 
-        # --- 2. 각 게시판 별 최신 글 3개 가져오기 ---
-        share_posts = list(db.posts.find({'board_type': '자료 공유'}).sort('created_at', -1).limit(3))
-        qna_posts = list(db.posts.find({'board_type': '우리들의 Q&A'}).sort('created_at', -1).limit(3))
-        study_posts = list(db.posts.find({'board_type': '스터디 하자'}).sort('created_at', -1).limit(3))
+        # 2. 각 게시판 별 최신 글 3개 가져오기 (실제 DB 조회)
+        # ⚠️ 중요: sort('date', -1)는 'date' 필드가 datetime 객체일 때만 정확히 동작함!
+        share_posts = list(db.shareData.find({}).sort('date', -1).limit(3))
+        qna_posts = list(db.qnaBoard.find({}).sort('date', -1).limit(3))
+        study_posts = list(db.studies.find({}).sort('date', -1).limit(3))
 
         # --- 3. 템플릿에 데이터 전달 ---
         return render_template('MainPage.html', 
@@ -94,6 +111,7 @@ def mainPage():
                                study_posts=study_posts)
 
     except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        # 토큰이 없거나 유효하지 않으면 로그인 페이지로 리다이렉트
         return redirect(url_for("home"))
 
 ## API
@@ -1027,4 +1045,4 @@ if __name__ == '__main__':
     # '0.0.0.0'은 모든 IP 주소에서 접근 가능
     # port=5001은 5001번 포트를 사용하도록 설정합니다. - 5000 으로 변환 예정
     # debug=True는 디버그 모드를 활성화하여 코드 변경 시 서버가 자동으로 재시작되고, 오류 발생 시 자세한 정보를 보여줌
-    app.run('0.0.0.0',port=5001,debug=True)
+    app.run('0.0.0.0',port=9393,debug=True)
