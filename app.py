@@ -141,7 +141,7 @@ def getUserInfo():
    except jwt.InvalidTokenError:
       return jsonify({'result': 'fail', 'msg': '유효하지 않은 토큰입니다.'})
       
-      
+   
 # '/createShareData' URL에 대한 GET 요청을 처리
 # 이 함수는 'createShareData.html' 템플릿을 렌더링하여 사용자에게 보여줌
 # 즉, 새로운 게시글을 작성하는 페이지를 보여주는 역할
