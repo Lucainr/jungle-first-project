@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>정글 커뮤니티 - 로그인</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* CSS 스타일링 시작 */
+        
+        /* 기본 여백 제거 및 전체 폰트/높이 설정 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #ffffff;
+        }
+
+        /* 전체 화면을 차지하는 flex 컨테이너 */
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 왼쪽과 오른쪽 패널 설정 */
+        .panel {
+            flex: 1; /* 양쪽 패널이 1:1 비율을 차지 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* 오른쪽 패널에 position: relative 추가 및 border-left 제거 */
+        .right-panel {
+            position: relative;
+        }
+
+        /* 가상요소(::before)를 사용해 길이 조절이 가능한 구분선 생성 */
+        .right-panel::before {
+            content: ""; /* 가상요소 필수 속성 */
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%); /* 수직 중앙 정렬 */
+            height: 900px; /* 선의 높이 (길이) 조절 */
+            width: 1px;
+            background-color: #e0e0e0;
+        }
+
+        /* 왼쪽 패널 컨텐츠 정렬 */
+        .left-content {
+            text-align: left;
+        }
+
+        /* 왼쪽 패널 제목 및 내용 스타일 */
+        .left-content h2 {
+            font-size: 2.9em;
+            font-weight: 700;
+            color: #1de9b6; /* 디자인의 메인 컬러 */
+            margin-bottom: 10px;
+        }
+
+        /* 왼쪽 패널 내용 텍스트 스타일 */
+        .left-content p {
+            color: #555;
+            margin-bottom: 30px;
+        }
+        
+        /* 왼쪽 패널 푸터 스타일 */
+        .left-content p.footnote {
+            font-size: 0.8em;
+            color: #999;
+        }
+
+        /* 오른쪽 패널 폼(ID/PW) 스타일 */
+        .login-form {
+            width: 380px;
+        }
+
+        /* 오른쪽 폼 레이블 스타일 */
+        .login-form label {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+            display: block;
+            margin-bottom: 40px;
+        }
+
+        /* 오른쪽 폼 입력창 스타일 */
+        .login-form input {
+            width: 100%;
+            border: none;
+            border-bottom: 2px solid #ccc;
+            padding: 10px 0;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            background-color: transparent;
+        }
+
+        /* input 창 클릭 시 테두리 없애기 */
+        .login-form input:focus {
+            outline: none;
+            border-bottom: 2px solid #1BD182; /* 클릭 시 메인 컬러로 변경 */
+        }
+
+        /* 버튼 공통 스타일 */
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        /* 로그인 버튼 스타일 */
+        .btn-login {
+            background-color: #1BD182;
+            color: white;
+            border: none;
+            margin-bottom: 15px;
+        }
+        
+        /* 회원가입 버튼 스타일 */
+        .btn-signup {
+            background-color: transparent;
+            color: #1BD182;
+            border: 2px solid #1BD182;
+        }
+
+        /* ID/PW 찾기 링크 스타일 */
+        .find-link {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            color: #888;
+            font-size: 0.9em;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="panel left-panel">
+            <div class="left-content">  
+                <h2>잠깐!<br>크래프톤 정글러이신가요?</h2>
+                <p>정글러시라면 正文에 가입하셔서<br>다양한 커뮤니케이션과 각종 모임에 참여하세요!</p>
+                <p class="footnote">*정글러가 아니시면 회원가입이 제한됩니다.</p>
+                <a type="button" class="btn btn-signup" onclick="openAuthPopup()">회원가입</a>
+            </div>
+        </div>
+
+        <div class="panel right-panel">
+            <div class="login-form">
+                <label for="id">ID</label>
+                <input type="text" id="id">
+
+                <label for="password">Password</label>
+                <input type="password" id="password">
+
+                <button type="button" class="btn btn-login" onclick="login()">로그인</button>
+                <a href="#" class="find-link">아이디/비밀번호 찾기</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+
+    {% include 'AuthPopup.html' %}
+
+    <script>
+        function login() {
+            // 1. 입력된 ID와 비밀번호 값을 가져온다.
+            let id = $('#id').val();
+            let password = $('#password').val();
+
+            // 2. ID 또는 비밀번호가 비어있는지 확인
+            if (id === "" || password === "") {
+                alert("아이디와 비밀번호를 모두 입력해주세요.");
+                return;
+            }
+
+            // 3. Ajax를 이용해 서버의 /api/SignIn 으로 POST 요청을 보낸다.
+            $.ajax({
+                type: "POST",
+                url: "/api/SignIn",
+                data: {
+                    id_give: id, 
+                    password_give: password
+                },
+                // 4. 서버로부터 응답을 받으면 success 콜백 함수가 실행된다.
+                success: function (response) {
+                    // 5. 서버로부터 받은 응답을 처리한다.
+                    if (response['result'] == 'success') {
+                        // 로그인이 성공하면, 서버가 보내준 토큰(token)을 'mytoken'라는 이름으로 쿠키에 저장
+                        $.cookie('mytoken', response['token'], {path: '/'});
+                        alert('로그인 성공!');
+                        // 로그인 성공 시, 메인 페이지로 이동
+                        window.location.href = '/main'; 
+                    } else {
+                        // 로그인 실패 시, 서버가 보내준 에러 메시지를 alert로 보여줌
+                        alert('아이디/비밀번호가 일치하지 않습니다.');
+                    }
+                }
+            });
+        }
+
+        // 팝업 열기 함수
+        function openAuthPopup() {
+            // display를 'flex'로 해야 우리가 CSS에 설정한 중앙 정렬이 적용됨
+            $('#authPopupOverlay').css('display', 'flex');
+        }
+
+        // 인증 코드 확인 함수
+        function checkAuthCode() {
+            const authCode = $('#authCode').val();
+            if (authCode === '406') {
+                // 성공 시 회원가입 페이지로 이동
+                window.location.href = '/signup';
+            } else {
+                alert('인증 코드가 일치하지 않습니다.');
+                $('#authCode').focus();
+            }
+        }
+        // 페이지 로딩이 완료되면, 닫기 기능 장착!
+        $(document).ready(function(){
+            // id가 'authPopupOverlay'인 요소를 클릭했을 때
+            $('#authPopupOverlay').on('click', function(e) {
+                // event.target은 내가 클릭한 '그' 요소를 의미
+                // 내가 클릭한 바로 '그' 요소가 회색 배경(authPopupOverlay) 자신일 때만
+                if(e.target == this){
+                    // 팝업을 숨긴다
+                    $(this).hide();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
