@@ -8,17 +8,27 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS는 이전과 동일하게 유지 */
+        /* 기본 여백 제거 및 전체 폰트/높이 설정 */
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Noto Sans KR', sans-serif; background-color: #ffffff; display: flex; justify-content: center; align-items: flex-start; padding-top: 50px; }
+        /* 팝업 컨테이너 스타일 */
         .popup-container { width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; }
+        /* 탭 메뉴 스타일 */
         .tab-menu { display: flex; border-bottom: 1px solid #e9ecef; margin-bottom: 30px; }
-        .tab-item { flex: 1; padding: 15px; text-align: center; font-size: 1.1em; font-weight: 500; color: #868e96; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+        /* 탭 아이템 스타일 */
+        .tab-item { flex: 1; padding: 15px; text-align: center; font-size: 1.1em; font-weight: 500; color: #868e96; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+        /* 활성화된 탭 아이템 스타일 */
         .tab-item.active { color: #1BD182; font-weight: 700; border-bottom: 3px solid #1BD182; }
+        /* 뷰 스타일 */
         .helper-text { text-align: center; color: #868e96; font-size: 0.9em; margin-bottom: 40px; }
+        /* 폼 영역 스타일 */
         .form-area { display: flex; flex-direction: column; gap: 30px; }
+        /* 폼 그룹 스타일 */
         .form-group label { display: block; font-size: 1.2em; font-weight: 700; margin-bottom: 15px; }
+        /* 입력창 스타일 */
         .form-group input { width: 100%; padding: 15px; font-size: 1em; border: none; background-color: #f1f3f5; border-radius: 8px; box-sizing: border-box; }
+        /* 입력창 포커스 스타일 */
         .form-group input:focus { outline: 2px solid #1BD182; }
+        /* 버튼 스타일 */
         .btn-submit { width: 100%; margin-top: 20px; padding: 20px; font-size: 1.2em; font-weight: 700; color: #fff; background-color: #1BD182; border: none; border-radius: 8px; cursor: pointer; }
         /* 찾은 아이디를 강조하는 스타일 */
         .found-id { font-weight: 700; color: #1BD182; font-size: 1.2em; }
@@ -49,15 +59,26 @@
         <div id="view2" style="display: none;">
             <p class="helper-text">입력하신 이메일로 확인코드가 발송되었습니다! 메일함을 확인해주세요!</p>
             <div class="form-area">
-                <div class="form-group">
-                    <label for="auth-code">인증코드</label>
-                    <input type="text" id="auth-code">
-                </div>
+                <div class="form-group"><label for="auth-code">인증코드</label><input type="text" id="auth-code"></div>
             </div>
             <button class="btn-submit" onclick="ConfirmAuthCode()">회원정보 확인</button>
-            <div id="view3" style="display: none;">
-                <p class="helper-text">회원님의 아이디는 <span id="found-id-span" class="found-id"></span> 입니다.</p>
+        </div>
+        <div id="view3" style="display: none;">
+            <p class="helper-text">회원님의 아이디는 <span id="found-id-span" class="found-id"></span> 입니다.</p>
+        </div>
+        <div id="view4" style="display: none;">
+            <p class="helper-text">새로운 비밀번호를 입력하세요!</p>
+            <div class="form-area">
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <input type="password" id="new-password">
+                </div>
+                <div class="form-group">
+                    <label for="confirm-new-password">Confirm Password</label>
+                    <input type="password" id="confirm-new-password">
+                </div>
             </div>
+            <button class="btn-submit" onclick="resetPassword()">비밀번호 변경</button>
         </div>
     </div>
 
@@ -65,8 +86,34 @@
     <script>
         // 서버로부터 받은 인증 코드를 저장할 변수
         let tempToken = "";
+        // 현재 모드를 기억하는 변수 ('id' 또는 'pw')
+        let findMode = 'id';
 
-        // [수정] 이메일 발송 버튼 클릭 시
+        function showFindId() {
+            findMode = 'id'; // 모드를 '아이디 찾기'로 설정
+            $('.tab-item').removeClass('active');
+            $('#find-id-tab').addClass('active');
+            
+            $('#helper-text-view1').text('가입하실 때 인증하셨던 Email과 성함을 입력해주세요.');
+            
+            // 모든 뷰를 숨기고 1단계 뷰만 보여줌
+            $('#view1').show();
+            $('#view2, #view3, #view4').hide();
+        }
+
+        function showFindPw() {
+            findMode = 'pw'; // 모드를 '비밀번호 찾기'로 설정
+            $('.tab-item').removeClass('active');
+            $('#find-pw-tab').addClass('active');
+
+            $('#helper-text-view1').text('비밀번호를 재설정할 계정의 Email과 성함을 입력해주세요.');
+
+            // 모든 뷰를 숨기고 1단계 뷰만 보여줌
+            $('#view1').show();
+            $('#view2, #view3, #view4').hide();
+        }
+
+        // 이메일 발송 버튼 클릭 시
         function SendEmail() {
             let email = $('#find-email').val();
             let username = $('#find-username').val();
@@ -82,7 +129,7 @@
                 data: { email_give: email, username_give: username },
                 success: function (response) {
                     if (response['result'] === 'success') {
-                        // [수정] 서버가 준 'temp_token'을 저장
+                        // 서버가 준 'temp_token'을 저장
                         tempToken = response['temp_token'];
                         alert("인증 코드가 발송되었습니다. 메일함을 확인해주세요.");
                         $('#view1').hide();
@@ -101,34 +148,63 @@
             
             $.ajax({
                 type: "POST",
-                url: "/api/find-id/verify",
+                url: "/api/find-account/verify",
                 data: {
                     token_give: tempToken, // 임시 토큰과
                     code_give: userCode    // 사용자가 입력한 코드를 함께 보냄
                 },
                 success: function (response) {
                     if (response['result'] === 'success') {
-                        let foundId = response['user_id'];
-                        $('#found-id-span').text(foundId); // 찾은 아이디를 화면에 표시
-
-                        $('#view2').hide();
-                        $('#view3').show();
-                    } else {
+                        // 현재 모드에 따라 다른 동작 수행
+                        if (findMode === 'id') {
+                            // 아이디 찾기 모드일 경우
+                            let foundId = response['user_id'];
+                            $('#found-id-span').text(foundId);
+                            $('#view2').hide();
+                            $('#view3').show();
+                        } else if (findMode === 'pw') {
+                            // 인증 성공 시, 비밀번호 재설정 화면으로 전환
+                            $('#view2').hide();
+                            $('#view4').show();
+                        }
+                    } 
+                    else {
                         alert('인증 코드가 일치하지 않습니다.');
                     }
                 }
             });
         }
 
-        // 탭 클릭 기능 (UI만 변경)
-        function showFindId() {
-            $('.tab-item').removeClass('active');
-            $('#find-id-tab').addClass('active');
-            // 나중에 필요하다면 아이디/비밀번호 찾기 폼 내용을 변경하는 로직 추가
-        }
-        function showFindPw() {
-            $('.tab-item').removeClass('active');
-            $('#find-pw-tab').addClass('active');
+                // 비밀번호 변경 함수
+        function resetPassword() {
+            let newPassword = $('#new-password').val();
+            let confirmNewPassword = $('#confirm-new-password').val();
+
+            if (newPassword !== confirmNewPassword) {
+                alert("새 비밀번호가 일치하지 않습니다.");
+                return;
+            }
+            if (!newPassword) {
+                alert("새 비밀번호를 입력해주세요.");
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: '/api/reset-password',
+                data: {
+                    token_give: tempToken,
+                    new_password_give: newPassword
+                },
+                success: function(response) {
+                    if (response.result === 'success') {
+                        alert('비밀번호가 성공적으로 변경되었습니다!');
+                        window.close(); // 팝업 창 닫기
+                    } else {
+                        alert(response.msg);
+                    }
+                }
+            });
         }
     </script>
 </body>

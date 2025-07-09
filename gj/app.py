@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, jsonify # request, jsonify �
 import random # 랜덤 숫자 생성을 위한 라이브러리
 import smtplib
 from email.mime.text import MIMEText
+import hashlib # 비밀번호 암호화를 위한 라이브러리
 
 # JWT를 위한 비밀 키
 SECRET_KEY = 'JUNGLE'
@@ -27,9 +28,12 @@ def home():
 def signup_page():
     return render_template('SignupPage.html')
 
+# 아이디/비밀번호 찾기 페이지
 @app.route('/find-account')
 def findAccountPage():
     return render_template('FindAccountPopup.html')
+
+
 
 ## API
 # 로그인 API
@@ -113,9 +117,9 @@ def SignUp():
 
     return jsonify({'result': 'success'})
 
-# [수정] 이메일 발송 API
+# 이메일 발송 API
 @app.route('/api/find-account/send-email', methods=['POST'])
-def sendAuthEmail():
+def SendAuthEmail():
     email_receive = request.form.get('email_give')
     username_receive = request.form.get('username_give')
 
@@ -155,9 +159,9 @@ def sendAuthEmail():
 
     return jsonify({'result': 'success', 'temp_token': temp_token})
 
-# [추가] 인증코드 확인 및 ID 반환 API
-@app.route('/api/find-id/verify', methods=['POST'])
-def VerifyFindIdCode():
+# 인증코드 확인 및 ID 반환 API
+@app.route('/api/find-account/verify', methods=['POST'])
+def VerifyFindAccountCode():
     token_receive = request.form.get('token_give')
     code_receive = request.form.get('code_give')
 
@@ -172,6 +176,28 @@ def VerifyFindIdCode():
         else:
             return jsonify({'result': 'fail'})
             
+    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        return jsonify({'result': 'fail', 'msg': '인증 시간이 만료되었습니다. 다시 시도해주세요.'})
+    
+    # 비밀번호 재설정 API
+@app.route('/api/reset-password', methods=['POST'])
+def ResetPassword():
+    token_receive = request.form.get('token_give')
+    new_password_receive = request.form.get('new_password_give')
+
+    try:
+        # 1. 임시 토큰을 디코딩해서 사용자 ID를 다시 한번 확인
+        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+        user_id = payload['id']
+
+        # 2. 새로운 비밀번호를 암호화
+        new_password_hash = hashlib.sha256(new_password_receive.encode('utf-8')).hexdigest()
+
+        # 3. DB에서 해당 ID를 가진 사용자의 비밀번호를 업데이트
+        db.users.update_one({'id': user_id}, {'$set': {'password': new_password_hash}})
+
+        return jsonify({'result': 'success'})
+        
     except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
         return jsonify({'result': 'fail', 'msg': '인증 시간이 만료되었습니다. 다시 시도해주세요.'})
 
