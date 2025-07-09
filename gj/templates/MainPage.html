@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>메인 페이지</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* 기본 여백 제거 및 전체 폰트/높이 설정 */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* --- 상단 네비게이션 바 --- */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            /* 양쪽 끝으로 요소 정렬 */
+            align-items: center;
+            padding: 0px 40px;
+            background-color: white;
+            width: 100%;
+            box-sizing: border-box;
+            border-bottom: 3px solid #1BD182;
+        }
+
+        /* 로고 크기 조정 */
+        .navbar .logo-nav {
+            height: 200px;
+        }
+
+        /* 게시판 메뉴 스타일 */
+        .navbar .nav-menu {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            /* 메뉴 아이템들을 중앙에 정렬 */
+            gap: 150px;
+            /* 메뉴 사이 간격 */
+            font-size: 1.5em;
+            /* 폰트 크기 조정 */
+            font-weight: 700;
+        }
+
+        /* 회원정보수정/로그아웃 갭, 크기 스타일 */
+        .navbar .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.9em;
+        }
+
+        /* 회원정보수정 버튼 스타일 */
+        .navbar .user-actions .btn-mypage {
+            background-color: #1BD182;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+
+        /* --- 전체 레이아웃 --- */
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* 상단 띠 제거 및 navbar 아래 테두리 초록색으로 변경 */
+        .main-container {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+            /* 스크롤바가 이상하게 생기는 것을 방지 */
+        }
+
+        /* --- 왼쪽 초록 사이드바 --- */
+        .sidebar {
+            width: 280px;
+            background-color: #1BD182;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 80px;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        /* 사이드바 프로필 사진 스타일 */
+        .sidebar .user-profile .icon {
+            font-size: 80px;
+            margin-bottom: 15px;
+        }
+
+        /* 사이드바 사용자 이름 스타일 */
+        .sidebar .user-profile .username {
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        /* 사이드바 메뉴 스타일 추가 */
+        .sidebar .side-nav {
+            margin-top: 80px;
+            /* 유저 프로필과 간격 */
+            width: 100%;
+        }
+
+        /* 사이드바 메뉴 링크 스타일 */
+        .sidebar .side-nav a {
+            display: block;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: white;
+            position: relative;
+        }
+
+        /* 마우스를 올렸을 때(:hover)도 active와 동일한 스타일 적용 */
+        .sidebar .side-nav a.active, .sidebar .side-nav a:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        /* 사이드바 메뉴 링크 활성화 스타일 */
+        .sidebar .side-nav a.active::before, .sidebar .side-nav a:hover::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 5px;
+            height: 100%;
+            background-color: white;
+        }
+
+
+        /* --- 메인 영역 크기 --- */
+        .main-content {
+            flex-grow: 1;
+            padding: 50px 80px;
+            overflow-y: auto;
+            /* 내용이 길어지면 이 부분만 스크롤됨 */
+        }
+
+        .content-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        /* 이달의 정글러 섹션 (flex 레이아웃 적용) */
+        .jungler-section {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        /* 메달 이미지 크기 키우기 */
+        .jungler-section .medal-img {
+            height: 120px;
+        }
+
+        /* 정글러 정보 스타일 */
+        .jungler-section .jungler-info h2 {
+            margin: 0 0 10px 0;
+            font-size: 2.2em;
+        }
+
+        /* 정글러 정보 텍스트 스타일 */
+        .jungler-section .jungler-info p {
+            margin: 0;
+            font-size: 1.2em;
+            color: #495057;
+        }
+
+        /* 정글러 정보 강조 텍스트 스타일 */
+        .jungler-section .jungler-info p b {
+            color: #1BD182;
+            font-weight: 700;
+        }
+
+        /* 이달의 정글러 제목 박스 스타일 */
+        .jungler-section .title-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* 이달의 정글러 제목 박스 이미지 스타일 */
+        .jungler-section .title-box img {
+            height: 40px;
+        }
+
+        /* 이달의 정글러 제목 박스 텍스트 스타일 */
+        .jungler-section .title-box h2 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        /* 이달의 정글러 내용 스타일 */
+        .jungler-section .content {
+            font-size: 1.1em;
+        }
+
+        /* 이달의 정글러 내용 강조 텍스트 스타일 */
+        .jungler-section .content b {
+            color: #1BD182;
+        }
+
+        /* 내 활동 바로가기 섹션 */
+        .my-activity-nav {
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 15px;
+        }
+
+        .my-activity-nav a {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #868e96;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .my-activity-nav a.active {
+            color: #343a40;
+        }
+
+        .my-activity-nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #343a40;
+        }
+
+        /* [수정] 게시판 미리보기 섹션 */
+        .board-previews {
+            display: flex;
+            gap: 30px;
+        }
+
+        .board-column {
+            flex: 1;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .board-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .board-header h3 {
+            margin: 0;
+            font-size: 1.3em;
+        }
+
+        .board-header h3 .new-badge {
+            /* [추가] NEW 뱃지 스타일 */
+            color: red;
+            font-size: 0.7em;
+            font-weight: 700;
+            margin-left: 5px;
+            position: relative;
+            top: -5px;
+        }
+
+        .board-header a {
+            font-size: 1.5em;
+            color: #868e96;
+        }
+
+        .board-column ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .board-column ul li {
+            padding: 10px 5px;
+            border-bottom: 1px solid #f1f3f5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .board-column ul li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container">
+        <nav class="navbar">
+            <a href="/main"><img src="{{ url_for('static', filename='image/junglelogo.png') }}" class="logo-nav"
+                    alt="정글 로고"></a>
+            <div class="nav-menu">
+                <a href="/shareDataBoard">자료 공유</a>
+                <a href="/qnaBoard">우리들의 Q&A</a>
+                <a href="/goToStudy">스터디 하자</a>
+            </div>
+            <div class="user-actions">
+                <a href="/AccountEditPage" class="btn-mypage">회원정보수정</a>
+                <a href="#" onclick="logout()">로그아웃</a>
+            </div>
+        </nav>
+
+        <div class="main-container">
+            <div class="sidebar">
+                <div class="user-profile">
+                    <div class="icon"><i class="fas fa-user-circle"></i></div>
+                    <div class="username" id="profile-username"></div>
+                </div>
+                <nav class="side-nav">
+                    <a href="#">추천한 게시글</a>
+                    <a href="#">내가 쓴 글</a>
+                </nav>
+            </div>
+            <div class="main-content">
+                <div class="content-container">
+                    <section class="jungler-section">
+                        <img src="{{ url_for('static', filename='image/Medalimage.png') }}" class="medal-img">
+                        <div class="jungler-info">
+                            <h2>이달의 정글러</h2>
+                            {% if jungler %}
+                            <p><b>{{ jungler.username }}</b> 님</p>
+                            <p>"{{ jungler.post_title }}"</p>
+                            {% else %}
+                            <p>이번 달에는 아직 이달의 정글러가 없어요!</p>
+                            {% endif %}
+                        </div>
+                    </section>
+                    <section class="board-previews">
+                        <div class="board-column">
+                            <div class="board-header">
+                                <h3>자료 공유<span class="new-badge">new</span></h3>
+                                <a href="/shareDataBoard">+</a>
+                            </div>
+                            <ul>
+                                {% for post in share_posts %}
+                                <li>{{ post.title }}</li>
+                                {% else %}
+                                <li>아직 게시글이 없어요.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="board-column">
+                            <div class="board-header">
+                                <h3>우리들의 Q&A<span class="new-badge">new</span></h3>
+                                <a href="/qnaBoard">+</a>
+                            </div>
+                            <ul>
+                                {% for post in qna_posts %}
+                                <li>{{ post.title }}</li>
+                                {% else %}
+                                <li>아직 게시글이 없어요.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="board-column">
+                            <div class="board-header">
+                                <h3>스터디 하자<span class="new-badge">new</span></h3>
+                                <a href="/goToStudy">+</a>
+                            </div>
+                            <ul>
+                                {% for post in study_posts %}
+                                <li>{{ post.title }}</li>
+                                {% else %}
+                                <li>아직 게시글이 없어요.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+
+    <script>
+        function logout() {
+            $.removeCookie('mytoken', { path: '/' });
+            alert('로그아웃 되었습니다.');
+            window.location.href = '/';
+        }
+
+        // 페이지 로딩 시, 내 정보를 가져와 사이드바에 표시
+        $(document).ready(function () {
+            // 이 로직은 토큰이 있는 페이지에서만 유효
+            if ($.cookie('mytoken')) {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/getMyInfo",
+                    success: function (response) {
+                        if (response.result === 'success') {
+                            $('#profile-username').text(response.user_info.username);
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+
+    {% block script %}{% endblock %}
+</body>
+
+</html>

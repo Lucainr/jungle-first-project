@@ -6,62 +6,146 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; background-color: #f8f9fa; }
-        .main-container { display: flex; height: 100vh; }
+        body, html { margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; background-color: #f8f9fa; height: 100%; box-sizing: border-box; }
+        a { text-decoration: none; color: inherit; }
 
-        .sidebar { width: 280px; background-color: #1BD182; color: white; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+        /* [수정 3] 상단 네비게이션 바 스타일 */
+        .navbar {
+            display: flex;
+            justify-content: space-between; /* 양쪽 끝으로 요소 정렬 */
+            align-items: center;
+            padding: 0px 40px;
+            background-color: white;
+            width: 100%;
+            box-sizing: border-box;
+            /* [수정 1] 상단 띠를 없애고, navbar의 아래 테두리를 초록색으로 변경 */
+            border-bottom: 3px solid #1BD182;
+        }
+        .navbar .logo-nav { height: 200px; }
+        .navbar .nav-menu {
+            /* 로고와 사용자 메뉴 사이의 공간을 모두 차지하도록 설정 */
+            flex-grow: 1;
+            display: flex;
+            justify-content: center; /* 메뉴 아이템들을 중앙에 정렬 */
+            gap: 150px; /* 메뉴 사이 간격 */
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+        .navbar .user-actions { display: flex; align-items: center; gap: 15px; font-size: 0.9em; }
+        .navbar .user-actions .btn-mypage { background-color: #1BD182; color: white; padding: 8px 15px; border-radius: 5px; font-weight: 500; }
+        /* [수정 2] 전체 레이아웃 컨테이너 */
+        .main-container {
+            display: flex;
+            height: 100%; /* body 높이(100%)를 그대로 사용 */
+        }
+        .sidebar {
+            width: 280px;
+            background-color: #1BD182;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 80px;
+            box-sizing: border-box;
+            flex-shrink: 0; /* 사이드바 너비가 줄어들지 않도록 설정 */
+        }
+        /* 사이드바 메뉴 스타일 추가 */
+        .sidebar .side-nav {
+            margin-top: 80px; /* 유저 프로필과 간격 */
+            width: 100%;
+        }
+        /* 사이드바 메뉴 링크 스타일 */
+        .sidebar .side-nav a {
+            display: block;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: white;
+            position: relative;
+        }
+        /* 마우스를 올렸을 때(:hover)도 active와 동일한 스타일 적용 */
+        .sidebar .side-nav a.active, .sidebar .side-nav a:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        /* 사이드바 메뉴 링크 활성화 스타일 */
+        .sidebar .side-nav a.active::before, .sidebar .side-nav a:hover::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 5px;
+            height: 100%;
+            background-color: white;
+        }
         .user-profile { margin-top: 80px; text-align: center; }
-        .user-profile .icon { font-size: 80px; margin-bottom: 20px; }
-        .user-profile .username { font-size: 1.5em; font-weight: 700; }
-
-        .main-content { flex: 1; padding: 40px 60px; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e9ecef; padding-bottom: 20px; margin-bottom: 40px; }
-        .page-header img { height: 40px; }
-        .header-actions a { color: #868e96; text-decoration: none; margin-left: 20px; font-weight: 500; }
+        /* [수정 2] 사이드바 프로필 아이콘 크기 조절 */
+        .user-profile .icon { font-size: 120px; margin-bottom: 20px; }
+        .user-profile .username { font-size: 1.3em; font-weight: 700; }
+        /* --- [수정] 메인 컨텐츠 스타일 --- */
+        .main-content {
+            flex: 1;
+            padding: 50px 80px;
+            overflow-y: auto; /* 내용 많아지면 스크롤 */
+        }
+        .main-content h1 { font-size: 1.8em; margin: 0 0 40px 0; border-bottom: 2px solid #343a40; padding-bottom: 20px;}
         
-        .edit-form h1 { font-size: 2em; margin-bottom: 40px;}
-        .edit-form label { display: block; margin: 25px 0 10px 0; font-weight: 700; }
+        /* --- [수정] 폼 스타일 --- */
+        .edit-form label { display: block; margin: 20px 0 8px 0; font-weight: 700; font-size: 0.9em; color: #495057;}
         .edit-form input[type="text"],
         .edit-form input[type="password"] {
-            width: 100%; padding: 12px; border: 1px solid #ced4da;
-            border-radius: 5px; box-sizing: border-box;
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 1em;
         }
         .input-group { display: flex; }
         .input-group input { flex-grow: 1; }
-        
-        /* [수정] 버튼 글자 줄바꿈 방지 속성 추가 */
         .input-group button { 
             margin-left: 10px; padding: 12px 15px; border: none; 
-            background-color: #6c757d; color: white; border-radius: 5px; 
-            cursor: pointer; white-space: nowrap; 
+            background-color: #868e96; color: white; border-radius: 5px; 
+            cursor: pointer; white-space: nowrap; font-weight: 500;
         }
-
-        .btn-save { width: 100%; padding: 15px; background-color: #343a40; color: white; border: none; border-radius: 5px; font-size: 1.1em; font-weight: 700; cursor: pointer; margin-top: 40px; }
+        .btn-save { 
+            width: 100%; padding: 15px; background-color: #343a40; 
+            color: white; border: none; border-radius: 5px; font-size: 1.1em; 
+            font-weight: 700; cursor: pointer; margin-top: 40px; 
+        }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <div class="sidebar">
-            <div class="user-profile">
-                <div class="icon"><i class="fas fa-user-circle"></i></div>
-                <div class="username" id="profile-username">로딩 중...</div>
-            </div>
+    <div style="display: flex; flex-direction: column; height: 100%;">
+    <nav class="navbar">
+        <a href="/main"><img src="{{ url_for('static', filename='image/junglelogo.png') }}" class="logo-nav" alt="정글 로고"></a>
+        <div class="nav-menu">
+            <a href="/shareDataBoard">자료 공유</a>
+            <a href="/qnaBoard">우리들의 Q&A</a>
+            <a href="/goToStudy">스터디 하자</a>
         </div>
-        <div class="main-content">
-            <div class="page-header">
-                <img src="{{ url_for('static', filename='image/junglelogo.png') }}" alt="정글 로고">
-                <div class="header-actions">
-                    <a href="#">회원정보수정</a>
-                    <a href="#" onclick="logout()">로그아웃</a>
+        <div class="user-actions">
+            <a href="/AccountEditPage" class="btn-mypage">회원정보수정</a>
+            <a href="/" onclick="logout()">로그아웃</a>
+        </div>
+    </nav>
+    <div class="main-container">
+            <div class="sidebar">
+                <div class="user-profile">
+                    <div class="icon"><i class="fas fa-user-circle"></i></div>
+                    <div class="username" id="profile-username"></div>
                 </div>
+                <nav class="side-nav">
+                    <a href="#">추천한 게시글</a>
+                    <a href="#">내가 쓴 글</a>
+                </nav>
             </div>
-            
+        <div class="main-content">
+            <h1>개인정보 수정</h1>   
             <div class="edit-form">
-                <h1>개인정보 수정</h1>
-                <label for="password">비밀번호</label>
+                <label for="password">새로운 비밀번호</label>
                 <input type="password" id="password" placeholder="변경할 경우에만 입력">
 
-                <label for="confirm_password">비밀번호 확인</label>
+                <label for="confirm_password">새로운 비밀번호 확인</label>
                 <input type="password" id="confirm_password">
 
                 <label for="username">이름</label>
@@ -87,7 +171,7 @@
         $(document).ready(function () {
             // 페이지 로딩 시 내 정보 가져오기
             $.ajax({
-                type: "GET", url: "/api/get-my-info",
+                type: "GET", url: "/api/getMyInfo",
                 success: function (response) {
                     if (response.result === 'success') {
                         let userInfo = response.user_info;

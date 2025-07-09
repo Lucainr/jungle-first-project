@@ -1,11 +1,13 @@
 import jwt # jwt 라이브러리 임포트
-import datetime # 유효기간 설정을 위한 라이브러리
 from pymongo import MongoClient
 from flask import Flask, render_template, request, jsonify, redirect, url_for # request, jsonify 추가
 import random # 랜덤 숫자 생성을 위한 라이브러리
 import smtplib
 from email.mime.text import MIMEText
 import hashlib # 비밀번호 암호화를 위한 라이브러리
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+
 
 # JWT를 위한 비밀 키
 SECRET_KEY = 'JUNGLE'
@@ -33,7 +35,53 @@ def signup_page():
 def findAccountPage():
     return render_template('FindAccountPopup.html')
 
+@app.route('/test')
+def test():
+    return render_template('layout.html')
 
+@app.route('/main')
+def mainPage():
+    token_receive = request.cookies.get('mytoken')
+    try:
+        # --- 1. 이달의 정글러 찾기 ---
+        # 이번 달 1일과 마지막 날 계산
+        now = datetime.now()
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_of_month = start_of_month + relativedelta(months=1) - timedelta(seconds=1)
+
+        # MongoDB Aggregation Pipeline을 사용해 가장 좋아요를 많이 받은 사용자 찾기
+        pipeline = [
+            {'$match': {'created_at': {'$gte': start_of_month, '$lte': end_of_month}}},
+            {'$group': {'_id': '$author_id', 'total_likes': {'$sum': '$likes'}, 'post_title': {'$first': '$title'}}},
+            {'$sort': {'total_likes': -1}},
+            {'$limit': 1}
+        ]
+        result = list(db.posts.aggregate(pipeline))
+        
+        jungler_of_month = None
+        if result:
+            top_user_id = result[0]['_id']
+            top_user = db.users.find_one({'id': top_user_id})
+            if top_user:
+                jungler_of_month = {
+                    'username': top_user['username'],
+                    'post_title': result[0]['post_title']
+                }
+
+        # --- 2. 각 게시판 별 최신 글 3개 가져오기 ---
+        share_posts = list(db.posts.find({'board_type': '자료 공유'}).sort('created_at', -1).limit(3))
+        qna_posts = list(db.posts.find({'board_type': '우리들의 Q&A'}).sort('created_at', -1).limit(3))
+        study_posts = list(db.posts.find({'board_type': '스터디 하자'}).sort('created_at', -1).limit(3))
+
+        # --- 3. 템플릿에 데이터 전달 ---
+        return render_template('MainPage.html', 
+                               jungler=jungler_of_month,
+                               share_posts=share_posts,
+                               qna_posts=qna_posts,
+                               study_posts=study_posts)
+
+    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        return redirect(url_for("home"))
 
 ## API
 # 로그인 API
@@ -56,7 +104,7 @@ def SignIn():
         # 'id'는 사용자를 식별할 수 있는 정보, 'exp'는 토큰의 만료 시간
         payload = {
             'id': id_receive,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)  # 1시간 동안 유효?
+            'exp': datetime.utcnow() + timedelta(hours=1)  # 1시간 동안 유효?
         }
         # JWT 생성
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')   # payload와 SECRET_KEY를 합쳐서 암호화된 토큰(문자열)을 인코딩?
@@ -132,8 +180,7 @@ def SendAuthEmail():
     auth_code = str(random.randint(1000, 9999))
     user_id = user['id']
 
-    # --- 실제 이메일 발송 로직 ---
-    # ⚠️ 주의: 실제 서비스에서는 이메일, 비밀번호를 코드에 직접 쓰지 말고, 환경변수 등을 사용해야 해!
+    # 실제 이메일 발송 로직
     sender_email = "junglerKrafton@gmail.com"  # 보내는 사람 구글 이메일
     sender_password = "oulnhdmxinqdalkd"   # 위에서 발급받은 16자리 앱 비밀번호
 
@@ -153,7 +200,7 @@ def SendAuthEmail():
     payload = {
         'id': user_id,
         'auth_code': auth_code,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=5) # 5분간 유효
+        'exp': datetime.utcnow() + timedelta(minutes=5) # 5분간 유효
     }
     temp_token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
@@ -216,8 +263,8 @@ def AccountEditPage():
 
 # --- API 부분에 아래 3개 추가 ---
 
-# [추가] 내 정보 가져오기 API
-@app.route('/api/get-my-info', methods=['GET'])
+# 내 정보 가져오기 API
+@app.route('/api/getMyInfo', methods=['GET'])
 def getMyInfo():
     token_receive = request.cookies.get('mytoken')
     try:
@@ -271,7 +318,6 @@ def CheckEmail():
         return jsonify({'result': 'fail'})
     else:
         return jsonify({'result': 'success'})
-
-
+    
 if __name__ == '__main__':
    app.run('0.0.0.0', port=9391, debug=True)
