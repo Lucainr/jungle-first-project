@@ -203,7 +203,7 @@ def shareDataBoardList():
 
    return render_template('readShareDataList.html', shareDatas=paginated_data, total_pages=total_pages)
 
-# MongoDB의 ObjectId를 다루기 위해 bson 라이브러리에서 ObjectId를 가져옴.
+# MongoDB의 ObjectId를 다루기 위해 bson 라이브러리에서 ObjectId를 가져옴
 from bson import ObjectId
 
 # '/shareDataBoard/<shareId>' URL에 대한 GET 요청을 처리
