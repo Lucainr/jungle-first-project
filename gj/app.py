@@ -24,7 +24,9 @@ def home():
 def signup_page():
     return render_template('SignupPage.html')
 
-
+@app.route('/find-account')
+def findAccountPage():
+    return render_template('FindAccountPopup.html')
 
 ## API
 # 로그인 API

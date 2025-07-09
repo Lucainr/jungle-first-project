@@ -50,7 +50,7 @@
             left: 0;
             top: 50%;
             transform: translateY(-50%); /* 수직 중앙 정렬 */
-            height: 900px; /* 선의 높이 (길이) 조절 */
+            height: 700px; /* 선의 높이 (길이) 조절 */
             width: 1px;
             background-color: #e0e0e0;
         }
@@ -171,7 +171,7 @@
                 <input type="password" id="password">
 
                 <button type="button" class="btn btn-login" onclick="login()">로그인</button>
-                <a href="#" class="find-link">아이디/비밀번호 찾기</a>
+                <a href="javascript:void(0);" onclick="openFindAccountPopup()" class="find-link">아이디/비밀번호 찾기</a>
             </div>
         </div>
     </div>
@@ -247,6 +247,18 @@
                 }
             });
         });
+
+        // ID/PW 찾기 팝업을 '새 창'으로 띄우는 함수
+        function openFindAccountPopup() {
+            const width = 677;
+            const height = 740;
+            // 화면 중앙에 팝업을 띄우기 위한 좌표 계산
+            const left = (window.screen.width / 2) - (width / 2);
+            const top = (window.screen.height / 2) - (height / 2);
+
+            // 새 창을 띄우는 명령어
+            window.open('/find-account', 'findAccountPopup', `width=${width},height=${height},left=${left},top=${top}`);
+        }
     </script>
 </body>
 </html>
