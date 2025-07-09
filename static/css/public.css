@@ -45,6 +45,10 @@ a {
     font-weight: 700;
 }
 
+.navbar .nav-menu a {
+    color: #000;
+}
+
 /* 회원정보수정/로그아웃 갭, 크기 스타일 */
 .navbar .user-actions {
     display: flex;

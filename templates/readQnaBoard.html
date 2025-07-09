@@ -24,7 +24,7 @@
                     alt="정글 로고"></a>
             <div class="nav-menu">
                 <a href="/shareDataBoardList">자료 공유</a>
-                <a href="#">우리들의 Q&A</a>
+                <a href="/qnaBoardList">우리들의 Q&A</a>
                 <a href="/goToStudy">스터디 하자</a>
             </div>
             <div class="user-actions">
@@ -250,7 +250,7 @@
         function checkLikeStatus() {
             $.ajax({
                 type: "GET",
-                url: `/getLikeStatus/${shareId}`,
+                url: `/qna/getLikeStatus/${shareId}`,
                 success: function (response) {
                     if (response.result === "success") {
                         if (response.liked) {
@@ -313,7 +313,7 @@
             // Ajax를 통해 서버에 '좋아요' 토글을 요청
             $.ajax({
                 type: "POST", // HTTP 요청 방식을 POST로 설정
-                url: `/toggleLike/${shareId}`, // 좋아요 토글을 요청할 URL
+                url: `/qna/toggleLike/${shareId}`, // 좋아요 토글을 요청할 URL
                 success: function (response) {
                     if (response.result === "success") {
                         // 성공 시, 화면의 '좋아요' 숫자를 업데이트

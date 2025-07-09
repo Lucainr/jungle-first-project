@@ -962,6 +962,63 @@ def deleteQnaBoard(shareId):
       return jsonify({'result': 'success'})
    else:
       return jsonify({'result': 'fail'})
+  
+# '/toggleLike/<shareId>' URL에 대한 POST 요청을 처리
+# 이 함수는 특정 게시글의 '좋아요' 수를 토글 (증가 또는 감소)
+@app.route('/qna/toggleLike/<shareId>', methods=['POST'])
+def qnaToggleLike(shareId):
+    user_id = get_user_id_from_token()
+    if user_id is None:
+        return jsonify({'result': 'fail', 'msg': '로그인이 필요합니다.'})
+
+    id = ObjectId(shareId)
+    share_data = db.qnaBoard.find_one({"_id": id})
+
+    if not share_data:
+        return jsonify({'result': 'fail', 'msg': '게시글을 찾을 수 없습니다.'})
+
+    liked_by = share_data.get('liked_by', [])
+    current_likes = share_data.get('likes', 0)
+
+    if user_id in liked_by:
+        # 이미 좋아요를 눌렀다면, 좋아요 취소
+        db.qnaBoard.update_one(
+            {"_id": id},
+            {"$pull": {"liked_by": user_id}, "$inc": {"likes": -1}}
+        )
+        new_likes = current_likes - 1
+        liked_status = False
+    else:
+        # 좋아요를 누르지 않았다면, 좋아요 추가
+        db.qnaBoard.update_one(
+            {"_id": id},
+            {"$push": {"liked_by": user_id}, "$inc": {"likes": 1}}
+        )
+        new_likes = current_likes + 1
+        liked_status = True
+    
+    return jsonify({'result': 'success', 'likes': new_likes, 'liked': liked_status})
+
+# '/getLikeStatus/<shareId>' URL에 대한 GET 요청을 처리
+# 이 함수는 특정 게시글에 대한 현재 사용자의 좋아요 상태를 반환
+@app.route('/qna/getLikeStatus/<shareId>', methods=['GET'])
+def getQnaLikeStatus(shareId):
+    user_id = get_user_id_from_token()
+    if user_id is None:
+        return jsonify({'result': 'fail', 'msg': '로그인이 필요합니다.'})
+
+    id = ObjectId(shareId)
+    share_data = db.qnaBoard.find_one({"_id": id})
+
+    if not share_data:
+        return jsonify({'result': 'fail', 'msg': '게시글을 찾을 수 없습니다.'})
+
+    liked_by = share_data.get('liked_by', [])
+    current_likes = share_data.get('likes', 0)
+    
+    liked_status = user_id in liked_by
+    
+    return jsonify({'result': 'success', 'likes': current_likes, 'liked': liked_status})
 
 # 이 스크립트가 직접 실행될 때만 아래 코드를 실행
 # (다른 파일에서 이 파일을 import할 때는 실행되지 않음)
