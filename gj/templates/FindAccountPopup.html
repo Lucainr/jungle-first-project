@@ -8,139 +8,127 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            font-family: 'Noto Sans KR', sans-serif;
-            background-color: #ffffff; /* 팝업창이므로 배경을 흰색으로 변경 */
-            display: flex;
-            justify-content: center;
-            align-items: flex-start; /* 컨텐츠를 위쪽으로 정렬 */
-            padding-top: 50px; /* 위에서부터 약간의 여백 */
-        }
-
-        .popup-container {
-            width: 100%;
-            max-width: 500px;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        /* 탭 메뉴 전체를 감싸는 div */
-        .tab-menu {
-            display: flex;
-            border-bottom: 1px solid #e9ecef;
-            margin-bottom: 30px;
-        }
-
-        /* 탭 아이템 (아이디 찾기, 비밀번호 찾기) */
-        .tab-item {
-            flex: 1; /* 1:1 비율로 공간 차지 */
-            padding: 15px;
-            text-align: center;
-            font-size: 1.1em;
-            font-weight: 500;
-            color: #868e96;
-            cursor: pointer;
-            border-bottom: 3px solid transparent; /* 비활성화 상태의 밑줄 */
-            margin-bottom: -1px; /* 아래 테두리와 겹치게 */
-        }
-        
-        /* [활성화된 탭] 스타일 */
-        .tab-item.active {
-            color: #1BD182;
-            font-weight: 700;
-            border-bottom: 3px solid #1BD182;
-        }
-        
-        /* 안내 문구 스타일 */
-        .helper-text {
-            text-align: center;
-            color: #868e96;
-            font-size: 0.9em;
-            margin-bottom: 40px;
-        }
-
-        .form-area {
-            display: flex;
-            flex-direction: column;
-            gap: 30px; /* 입력창 그룹 사이의 간격 */
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 1.2em;
-            font-weight: 700;
-            margin-bottom: 15px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 15px;
-            font-size: 1em;
-            border: none;
-            background-color: #f1f3f5; /* 입력창 배경색 */
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-
-        .form-group input:focus {
-            outline: 2px solid #1BD182;
-        }
-
-        /* 이메일 발송 버튼 */
-        .btn-submit {
-            width: 100%;
-            margin-top: 20px;
-            padding: 20px;
-            font-size: 1.2em;
-            font-weight: 700;
-            color: #fff;
-            background-color: #1BD182;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
+        /* CSS는 이전과 동일하게 유지 */
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Noto Sans KR', sans-serif; background-color: #ffffff; display: flex; justify-content: center; align-items: flex-start; padding-top: 50px; }
+        .popup-container { width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; }
+        .tab-menu { display: flex; border-bottom: 1px solid #e9ecef; margin-bottom: 30px; }
+        .tab-item { flex: 1; padding: 15px; text-align: center; font-size: 1.1em; font-weight: 500; color: #868e96; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+        .tab-item.active { color: #1BD182; font-weight: 700; border-bottom: 3px solid #1BD182; }
+        .helper-text { text-align: center; color: #868e96; font-size: 0.9em; margin-bottom: 40px; }
+        .form-area { display: flex; flex-direction: column; gap: 30px; }
+        .form-group label { display: block; font-size: 1.2em; font-weight: 700; margin-bottom: 15px; }
+        .form-group input { width: 100%; padding: 15px; font-size: 1em; border: none; background-color: #f1f3f5; border-radius: 8px; box-sizing: border-box; }
+        .form-group input:focus { outline: 2px solid #1BD182; }
+        .btn-submit { width: 100%; margin-top: 20px; padding: 20px; font-size: 1.2em; font-weight: 700; color: #fff; background-color: #1BD182; border: none; border-radius: 8px; cursor: pointer; }
+        /* 찾은 아이디를 강조하는 스타일 */
+        .found-id { font-weight: 700; color: #1BD182; font-size: 1.2em; }
     </style>
 </head>
 <body>
     <div class="popup-container">
         <div class="tab-menu">
-            <div class="tab-item active" onclick="showFindId()">아이디 찾기</div>
-            <div class="tab-item" onclick="showFindPw()">비밀번호 찾기</div>
+            <div id="find-id-tab" class="tab-item active" onclick="showFindId()">아이디 찾기</div>
+            <div id="find-pw-tab" class="tab-item" onclick="showFindPw()">비밀번호 찾기</div>
         </div>
 
-        <p class="helper-text">가입하실 때 인증하셨던 Email과 성함을 입력해주세요.</p>
-
-        <div class="form-area">
-            <div class="form-group">
-                <label for="find-email">Email</label>
-                <input type="text" id="find-email">
+        <div id="view1">
+            <p class="helper-text">가입하실 때 인증하셨던 Email과 성함을 입력해주세요.</p>
+            <div class="form-area">
+                <div class="form-group">
+                    <label for="find-email">Email</label>
+                    <input type="text" id="find-email">
+                </div>
+                <div class="form-group">
+                    <label for="find-username">Username</label>
+                    <input type="text" id="find-username">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="find-username">Username</label>
-                <input type="text" id="find-username">
-            </div>
+            <button class="btn-submit" onclick="SendEmail()">이메일 발송</button>
         </div>
 
-        <button class="btn-submit" onclick="sendEmail()">이메일 발송</button>
+        <div id="view2" style="display: none;">
+            <p class="helper-text">입력하신 이메일로 확인코드가 발송되었습니다! 메일함을 확인해주세요!</p>
+            <div class="form-area">
+                <div class="form-group">
+                    <label for="auth-code">인증코드</label>
+                    <input type="text" id="auth-code">
+                </div>
+            </div>
+            <button class="btn-submit" onclick="ConfirmAuthCode()">회원정보 확인</button>
+            <div id="view3" style="display: none;">
+                <p class="helper-text">회원님의 아이디는 <span id="found-id-span" class="found-id"></span> 입니다.</p>
+            </div>
+        </div>
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
-        // UI 먼저 잡고, 기능은 다음 단계에서 구현!
+        // 서버로부터 받은 인증 코드를 저장할 변수
+        let tempToken = "";
+
+        // [수정] 이메일 발송 버튼 클릭 시
+        function SendEmail() {
+            let email = $('#find-email').val();
+            let username = $('#find-username').val();
+
+            if (email === "" || username === "") {
+                alert("이메일과 성함을 모두 입력해주세요.");
+                return;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/api/find-account/send-email",
+                data: { email_give: email, username_give: username },
+                success: function (response) {
+                    if (response['result'] === 'success') {
+                        // [수정] 서버가 준 'temp_token'을 저장
+                        tempToken = response['temp_token'];
+                        alert("인증 코드가 발송되었습니다. 메일함을 확인해주세요.");
+                        $('#view1').hide();
+                        $('#view2').show();
+                    } else {
+                        alert('이메일 또는 닉네임이 일치하지 않습니다.');
+                    }
+                }
+            });
+        }
+
+        // 회원정보 확인 버튼 클릭 시
+        function ConfirmAuthCode() {
+            let userCode = $('#auth-code').val();
+            if (!userCode) { alert("인증코드를 입력해주세요."); return; }
+            
+            $.ajax({
+                type: "POST",
+                url: "/api/find-id/verify",
+                data: {
+                    token_give: tempToken, // 임시 토큰과
+                    code_give: userCode    // 사용자가 입력한 코드를 함께 보냄
+                },
+                success: function (response) {
+                    if (response['result'] === 'success') {
+                        let foundId = response['user_id'];
+                        $('#found-id-span').text(foundId); // 찾은 아이디를 화면에 표시
+
+                        $('#view2').hide();
+                        $('#view3').show();
+                    } else {
+                        alert('인증 코드가 일치하지 않습니다.');
+                    }
+                }
+            });
+        }
+
+        // 탭 클릭 기능 (UI만 변경)
         function showFindId() {
-            alert("아이디 찾기 탭 클릭!");
+            $('.tab-item').removeClass('active');
+            $('#find-id-tab').addClass('active');
+            // 나중에 필요하다면 아이디/비밀번호 찾기 폼 내용을 변경하는 로직 추가
         }
-
         function showFindPw() {
-            alert("비밀번호 찾기 탭 클릭!");
-        }
-
-        function sendEmail() {
-            alert("이메일 발송 버튼 클릭!");
+            $('.tab-item').removeClass('active');
+            $('#find-pw-tab').addClass('active');
         }
     </script>
 </body>
