@@ -5,7 +5,7 @@
 # jsonify: 파이썬 딕셔너리를 JSON 응답으로 변환하기 위함
 import jwt # jwt 라이브러리 임포트
 import datetime # 유효기간 설정을 위한 라이브러리
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash # request, jsonify 추가
+from flask import Flask, render_template, request, jsonify # request, jsonify 추가
 import random # 랜덤 숫자 생성을 위한 라이브러리
 import smtplib
 from email.mime.text import MIMEText
@@ -444,8 +444,12 @@ def deleteShareData(shareId):
 # 이 스크립트가 직접 실행될 때만 아래 코드를 실행
 # (다른 파일에서 이 파일을 import할 때는 실행되지 않음)
 if __name__ == '__main__':   
+<<<<<<< HEAD:app.py
     # Flask 개발 서버를 실행
     # '0.0.0.0'은 모든 IP 주소에서 접근 가능
     # port=5001은 5001번 포트를 사용하도록 설정합니다. - 5000 으로 변환 예정
     # debug=True는 디버그 모드를 활성화하여 코드 변경 시 서버가 자동으로 재시작되고, 오류 발생 시 자세한 정보를 보여줌
     app.run('0.0.0.0',port=5001,debug=True)
+=======
+   app.run('0.0.0.0',port=5001,debug=True)
+>>>>>>> 996cf84fcbb40a78edb68a508a8ac544d24a1db4:test/app.py
