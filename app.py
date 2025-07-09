@@ -3,11 +3,14 @@
 # request: 클라이언트로부터의 요청을 처리하기 위함
 # render_template: HTML 템플릿을 렌더링하기 위함
 # jsonify: 파이썬 딕셔너리를 JSON 응답으로 변환하기 위함
-import jwt
-import datetime
-import math # 총 페이지 수를 계산하기 위한 math 라이브러리
-from flask import Flask, request, render_template, jsonify
-app = Flask(__name__)
+import jwt # jwt 라이브러리 임포트
+import datetime # 유효기간 설정을 위한 라이브러리
+from flask import Flask, render_template, request, jsonify # request, jsonify 추가
+import random # 랜덤 숫자 생성을 위한 라이브러리
+import smtplib
+from email.mime.text import MIMEText
+import hashlib # 비밀번호 암호화를 위한 라이브러리
+import math
 
 # MongoDB와 상호작용하기 위한 pymongo 라이브러리를 가져옴
 from pymongo import MongoClient
@@ -16,6 +19,8 @@ from pymongo import MongoClient
 client = MongoClient('mongodb://test:test@15.164.170.54',27017)
 # 'dbjungle'이라는 이름의 데이터베이스를 사용
 db = client.dbjungle
+
+app = Flask(__name__)
 
 # JWT를 위한 비밀 키
 SECRET_KEY = 'JUNGLE'
@@ -29,8 +34,7 @@ def get_user_id_from_token():
         return payload['id']
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
-
-
+     
 ## 라우팅
 # 기본 URL 접속 시 Login 페이지
 @app.route('/')
@@ -41,6 +45,11 @@ def home():
 @app.route('/signup')
 def signup_page():
     return render_template('SignupPage.html')
+
+# 아이디/비밀번호 찾기 페이지
+@app.route('/find-account')
+def findAccountPage():
+    return render_template('FindAccountPopup.html')
 
 
 
@@ -125,6 +134,90 @@ def SignUp():
     db.users.insert_one(user)
 
     return jsonify({'result': 'success'})
+
+# 이메일 발송 API
+@app.route('/api/find-account/send-email', methods=['POST'])
+def SendAuthEmail():
+    email_receive = request.form.get('email_give')
+    username_receive = request.form.get('username_give')
+
+    user = db.users.find_one({'email': email_receive, 'username': username_receive}, {'_id': False})
+
+    if not user:
+        return jsonify({'result': 'fail'})
+
+    # 4자리 랜덤 인증 코드 생성
+    auth_code = str(random.randint(1000, 9999))
+    user_id = user['id']
+
+    # --- 실제 이메일 발송 로직 ---
+    # ⚠️ 주의: 실제 서비스에서는 이메일, 비밀번호를 코드에 직접 쓰지 말고, 환경변수 등을 사용해야 해!
+    sender_email = "junglerKrafton@gmail.com"  # 보내는 사람 구글 이메일
+    sender_password = "oulnhdmxinqdalkd"   # 위에서 발급받은 16자리 앱 비밀번호
+
+    smtp = smtplib.SMTP('smtp.gmail.com', 587)
+    smtp.starttls()
+    smtp.login(sender_email, sender_password)
+
+    msg = MIMEText(f'정글 커뮤니티 아이디 찾기 인증 코드: [{auth_code}]')
+    msg['Subject'] = '정글 커뮤니티 인증 코드'
+    msg['To'] = email_receive
+
+    smtp.sendmail(sender_email, email_receive, msg.as_string())
+    smtp.quit()
+    # ---------------------------
+
+    # 인증 성공 시, 다음 단계에서 사용할 임시 토큰 발급 (사용자 ID와 인증코드 포함)
+    payload = {
+        'id': user_id,
+        'auth_code': auth_code,
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=5) # 5분간 유효
+    }
+    temp_token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+
+    return jsonify({'result': 'success', 'temp_token': temp_token})
+
+# 인증코드 확인 및 ID 반환 API
+@app.route('/api/find-account/verify', methods=['POST'])
+def VerifyFindAccountCode():
+    token_receive = request.form.get('token_give')
+    code_receive = request.form.get('code_give')
+
+    try:
+        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+        
+        user_id = payload['id']
+        auth_code = payload['auth_code']
+
+        if auth_code == code_receive:
+            return jsonify({'result': 'success', 'user_id': user_id})
+        else:
+            return jsonify({'result': 'fail'})
+            
+    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        return jsonify({'result': 'fail', 'msg': '인증 시간이 만료되었습니다. 다시 시도해주세요.'})
+    
+    # 비밀번호 재설정 API
+@app.route('/api/reset-password', methods=['POST'])
+def ResetPassword():
+    token_receive = request.form.get('token_give')
+    new_password_receive = request.form.get('new_password_give')
+
+    try:
+        # 1. 임시 토큰을 디코딩해서 사용자 ID를 다시 한번 확인
+        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+        user_id = payload['id']
+
+        # 2. 새로운 비밀번호를 암호화
+        new_password_hash = hashlib.sha256(new_password_receive.encode('utf-8')).hexdigest()
+
+        # 3. DB에서 해당 ID를 가진 사용자의 비밀번호를 업데이트
+        db.users.update_one({'id': user_id}, {'$set': {'password': new_password_hash}})
+
+        return jsonify({'result': 'success'})
+        
+    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        return jsonify({'result': 'fail', 'msg': '인증 시간이 만료되었습니다. 다시 시도해주세요.'})
 
 @app.route('/getUserInfo')
 def getUserInfo():
