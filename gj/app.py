@@ -17,7 +17,7 @@ app = Flask(__name__)
 # 기본 URL 접속 시 Login 페이지
 @app.route('/')
 def home():
-   return render_template('LoginPage.html')
+    return render_template('LoginPage.html')
 
 # 회원가입 페이지
 @app.route('/signup')

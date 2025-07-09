@@ -21,6 +21,18 @@
                 <input type="hidden" name="_id" value="{{ study._id }}">
                 <input type="hidden" name="capacity" value="{{ study.capacity }}">
                 <button >신청하기</button>
+                <!-- 신청자가 있으면 card 생성 -->
+            {% if study.applicants %}
+                {% for applicant in study.applicants %}
+                    <div style="border: 1px solid #aaa; border-radius: 8px; padding: 10px; margin: 10px">
+                <p><strong>ID:</strong> {{ applicant.applied_id }}</p>
+                <p><strong>Username:</strong> {{ applicant.applied_username }}</p>
+                    </div>
+                {% endfor %}
+                <!-- 없으면 신청자가 없습니다  -->
+            {% else %}
+                <p>아직 신청자가 없습니다.</p>
+                {% endif %}
     </form>
     {% if alert_message %}
         <script>
@@ -37,7 +49,7 @@
 
         {% endif %} 
 </div>
-    <a href="/">목록으로 돌아가기</a>
+    <a href="/goToStudy">목록으로 돌아가기</a>
 
     
 </body>

@@ -2,6 +2,7 @@ from flask import Flask, render_template, request , redirect, url_for, flash
 from pymongo import MongoClient 
 from datetime import datetime
 from bson import ObjectId
+import jwt
 
 client = MongoClient('mongodb://test:test@15.164.170.54', 27017)  # mongoDB는 27017 포트로 돌아갑니다.
 #client = MongoClient('localhost', 27017) 
@@ -9,7 +10,11 @@ db = client.dbjungle  # 'dbjungle'라는 이름의 db를 만들거나 사용합�
 
 app = Flask(__name__)
 
+#flash 위해 필요한 키
 app.secret_key = 'studies_secret_key'
+
+#JWT 위해 필요한 키
+SECRET_KEY = 'JUNGLE'
 
 
 #db.studies.delete_many({})   #다 지우기
@@ -22,15 +27,15 @@ def main():
 
 @app.route('/study/<study_id>')
 def study_detail(study_id):
-    try:
+    try: #ID는 원래 string 타입이 아님 따라서 변환 필요
         obj_id = ObjectId(study_id)
     except:
         return "유효하지 않은 ID입니다.", 400
-
+    #아이디 찾으면
     study = db.studies.find_one({'_id': obj_id})
     if not study:
         return "존재하지 않는 스터디입니다.", 404
-    
+    #studyDetail에게 study 값 전달
     return render_template('studyDetail.html', study=study)
 
 
@@ -51,6 +56,7 @@ def edit_study(study_id):
                 'post': post
             }}
         )
+        #수정후에는 studyDetail.html에게 값 전달 후 그 페이지로 이동
         return redirect(url_for('study_detail', study_id=study_id))
     
     else :
@@ -61,17 +67,43 @@ def edit_study(study_id):
 @app.route('/submitStudy', methods=['GET', 'POST'])
 def submit_study():
     if request.method == 'POST':
+        # 1. 쿠키에서 토큰 꺼내기
+        token_receive = request.cookies.get('mytoken')
+
+        try:
+            # 2. 토큰 디코딩
+            payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+            user_id = payload['id']
+            username = payload['username']  # username도 토큰에 포함돼 있어야 함
+
+        except (jwt.ExpiredSignatureError, jwt.DecodeError, jwt.InvalidTokenError):
+            user_id = "알 수 없음"
+            username = "알 수 없음"
+        
+# except 블록 밖, 즉 여기부터는 예외 발생 여부와 관계없이 실행됨
+        # 3. 폼 정보 받기
         capacity = request.form.get('capacity')
         post = request.form.get('post')
         title = request.form.get('title')
         createdTime = datetime.now()
 
-        success = True
-        
-        db.studies.insert_one({'capacity' : capacity ,'title' : title, 'post' : post , 'number' : 0, 'date' : createdTime})
-        flash('등록 완료!')  # 플래시 메시지 저장
+        # 4. MongoDB에 저장
+        db.studies.insert_one({
+                'capacity': capacity,
+                'title': title,
+                'post': post,
+                'number': 0,
+                'date': createdTime,
+                'user_id': user_id,
+                'username': username
+        })
 
-        return redirect(url_for('main'))  # 메인 페이지로 리다이렉트
+        #success = True
+        flash('등록 완료!')
+        return redirect(url_for('main')) # 메인 페이지로 리다이렉트
+
+        
+        
         #return render_template('result.html', title=title, capacity=capacity, post=post,)
     
     else:
@@ -96,7 +128,7 @@ def delete_study():
 
 
 
-    
+    #정원 +1 되게 해주는 거
 @app.route('/study/<study_id>', methods=['POST'])
 def give_num(study_id):
 
@@ -113,14 +145,34 @@ def give_num(study_id):
     if not get_Id:
         return "해당 ID가 존재하지 않습니다.", 404
     
+    # 2. JWT에서 신청자 정보 꺼내기
+    token = request.cookies.get('mytoken')
+    # if not token:
+    #     return "로그인이 필요합니다.", 401
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        applicant_id = payload.get('id', '알 수 없음')
+        applicant_username = payload.get('username', '알 수 없음')
+    except (jwt.ExpiredSignatureError, jwt.DecodeError, jwt.InvalidTokenError):
+        applicant_id = '알 수 없음'
+        applicant_username = '알 수 없음'
+
+    
     new_number = get_Id.get('number', 0) + 1
-    ##정원초과면 못나오게
+    ##정원초과면 alert 나오게 함 # 3. 정원 체크
     if new_number > capacity:
         study = db.studies.find_one({'_id': id})
         return render_template('studyDetail.html', alert_message="정원을 초과하였습니다!" ,study=study)
     
     else:
-        db.studies.update_one({'_id': id}, {'$set': {'number': new_number}})
+        db.studies.update_one(
+        {'_id': ObjectId(study_id)},
+        {
+            '$set': {'number': new_number},
+            '$push': {'applicants': {'applied_id': applicant_id, 'applied_username': applicant_username}}
+        }
+        )
         #새로고침의 효과
         updated_study = db.studies.find_one({'_id': id})
 

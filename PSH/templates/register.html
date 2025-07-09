@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,28 +12,30 @@
 
 
 </head>
+
 <body>
     <div>
 
-        <p style = "margin-top: 200px;"></p>
-    <h1 style ="margin-left: 250px;">스터디를 하자!</h1> <!--텍스트 오른쪽 정렬 me-3:오른쪽 여백 -->
+        <p style="margin-top: 200px;"></p>
+        <h1 style="margin-left: 250px;">스터디를 하자!</h1> <!--텍스트 오른쪽 정렬 me-3:오른쪽 여백 -->
 
-    <p style = "margin-top: 150px;"></p>
-    <div class="card" style="max-width: 1500px; margin-left: auto; margin-right: 30px;">
-        <div class="card-body" style="height: 500px;">
-    <h2>스터디 등록</h2>
-    <form action="/submitStudy" method="post">
-        제목: <input type="text" name="title" placeholder="제목을 입력하세요" />
-        정원: <input type="number" name="capacity" style="width:50px" required min="1"><br><br>
-        게시글:<br>
-        <textarea name="post" rows="5" cols="100" required></textarea><br><br>
-        <!-- <input value="등록"> -->
-        <button>등록</button>
+        <p style="margin-top: 150px;"></p>
+        <div class="card" style="max-width: 1500px; margin-left: auto; margin-right: 30px;">
+            <div class="card-body" style="height: 500px;">
+                <h2>스터디 등록</h2>
+                <form action="/submitStudy" method="post">
+                    <!-- 제목, 정원, 게시글을 사용자에게 입력받음 -->
+                    제목: <input type="text" name="title" placeholder="제목을 입력하세요" />
+                    정원: <input type="number" name="capacity" style="width:50px" required min="1"><br><br>
+                    게시글:<br>
+                    <textarea name="post" rows="5" cols="100" required></textarea><br><br>
+                    <!-- <input value="등록"> -->
+                    <button>등록</button>
 
-        <button onclick="location.href='/goToStudy'">뒤로가기</button>
+                    <button onclick="location.href='/goToStudy'">뒤로가기</button>
+            </div>
         </div>
-    </div>
-    </form>
+        </form>
 
 
     </div>
@@ -42,4 +45,5 @@
         integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct"
         crossorigin="anonymous"></script>
 </body>
+
 </html>

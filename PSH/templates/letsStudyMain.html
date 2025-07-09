@@ -27,6 +27,7 @@
 
     <h1>스터디를 하자</h1>
     <button style="margin-right: 10px;" onclick="location.href='/submitStudy'">등록</button>
+    <!-- app.py 에 저장된 flash 내용 필요시 alert 울리게 -->
     {% with messages = get_flashed_messages() %}
     {% if messages %}
         <script>
@@ -36,13 +37,15 @@
     {% endwith %}
     <p style = "margin-top: 150px;"></p>
     <div class="cards-container">
+        <!-- studies db에서 study들 생성해서 card 만들기 -->
         {% for study in studies %}
-
         <div class="card" id="{{ study._id }}" style="display: flex; justify-content: space-between; align-items: center;">
             <a href="{{ url_for('study_detail', study_id=study._id|string)}}" style="text-decoration:none; color:inherit;"> {{ study.title }}</a>            
-            <!-- 오른쪽: 모집정원 + 날짜 -->
+            <!-- 오른쪽: 모집정원 + 날짜 + 작성자 + ID-->
             <div style="display: flex; gap: 10px; align-items: flex-end;">
-        <h3 style="margin: 0;">모집정원: {{ study.number }} / {{ study.capacity }}</h3>
+        <span style="margin: 0;">모집정원: {{ study.number }} / {{ study.capacity }}</span>
+        <span>작성자 : {{ study.username }}</span>
+        <!-- <span> ID :  {{ study.user_id}} </span>  아이디까지 필요없을듯 -->
         <span style="font-size: 0.9em; color: gray;">
             {{ study.date.strftime('%Y-%m-%d') }}
         </span>
