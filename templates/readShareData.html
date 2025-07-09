@@ -40,14 +40,40 @@
                         // 서버에서 받은 타임스탬프(response.date)를 한국 시간 형식의 문자열로 변환하여 표시
                         $("#date").val(new Date(parseInt(response.date)).toLocaleString("ko-KR"));
                         $("#likes").val(response.likes);
+
+                        // 게시글 상세 정보를 불러온 후, 좋아요 상태를 확인
+                        checkLikeStatus();
                     } else {
                         // 데이터를 불러오지 못했을 경우 사용자에게 알림을 표시
                         alert("데이터를 불러오지 못했습니다.");
                     }
                 }
             });
-
         });
+
+        // 좋아요 상태를 확인하는 함수
+        function checkLikeStatus() {
+            $.ajax({
+                type: "GET",
+                url: `/getLikeStatus/${shareId}`,
+                success: function (response) {
+                    if (response.result === "success") {
+                        if (response.liked) {
+                            $("#likeButton").text("👎"); // 좋아요 취소 버튼
+                        } else {
+                            $("#likeButton").text("👍"); // 좋아요 버튼
+                        }
+                        $("#likes").val(response.likes); // 좋아요 수 업데이트
+                    } else {
+                        console.error("좋아요 상태를 불러오지 못했습니다:", response.msg);
+                        // 로그인 필요 등의 메시지를 사용자에게 보여줄 수 있음
+                    }
+                },
+                error: function () {
+                    console.error("서버 오류 발생: 좋아요 상태 확인");
+                }
+            });
+        }
 
         // '수정' 버튼 클릭 시 호출될 함수
         // 전역(window) 객체에 함수를 할당하여 HTML의 onclick 속성에서 직접 호출할 수 있도록 함
@@ -85,24 +111,28 @@
         }
 
         // '좋아요' 버튼 클릭 시 호출될 함수
-        function addLikes(){
-            // 좋아요를 추가할 게시글의 ID를 다시 한 번 명시 (전역 변수 shareId를 사용해도 무방함)
+        function toggleLike(){
+            // 좋아요를 추가/취소할 게시글의 ID
             let shareId = "{{ shareId }}";
 
-            // Ajax를 통해 서버에 '좋아요' 추가를 요청
+            // Ajax를 통해 서버에 '좋아요' 토글을 요청
             $.ajax({
                 type: "POST", // HTTP 요청 방식을 POST로 설정
-                url: `/addLikes/${shareId}`, // 좋아요 추가를 요청할 URL
+                url: `/toggleLike/${shareId}`, // 좋아요 토글을 요청할 URL
                 success: function (response) {
                     if (response.result === "success") {
-                        // 성공 시, 화면의 '좋아요' 숫자를 1 증가
-                        // 현재 '좋아요' 수를 가져와 숫자로 변환한 뒤 1을 더함
-                        let currentLikes = parseInt($("#likes").val()) + 1;
-                        // 증가된 값을 다시 input 필드에 설정
-                        $("#likes").val(currentLikes);
-                        alert("좋아요 +1 !");
+                        // 성공 시, 화면의 '좋아요' 숫자를 업데이트
+                        $("#likes").val(response.likes);
+                        // 좋아요 상태에 따라 버튼 텍스트 변경
+                        if (response.liked) {
+                            $("#likeButton").text("👎");
+                            alert("좋아요 +1 !");
+                        } else {
+                            $("#likeButton").text("👍");
+                            alert("좋아요 취소!");
+                        }
                     } else {
-                        alert("좋아요 실패!");
+                        alert(response.msg); // 서버에서 받은 메시지 표시 (예: 로그인 필요)
                     }
                 },
                 // 요청 처리 중 오류가 발생했을 때 실행될 콜백 함수
@@ -121,7 +151,7 @@
                     <br>
                     <div class="mb-3">
                         <input type="text" class="form-control" id="shareTitle" readonly>
-                        <button class="btn btn-success float-end" onclick="addLikes();">👍</button>
+                        <button class="btn btn-success float-end" id="likeButton" onclick="toggleLike();">👍</button>
                     </div>
                     <div class="mb-3">
                         <textarea class="form-control" rows="10" id="shareContent" readonly></textarea>

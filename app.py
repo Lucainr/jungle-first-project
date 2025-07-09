@@ -20,6 +20,16 @@ db = client.dbjungle
 # JWT를 위한 비밀 키
 SECRET_KEY = 'JUNGLE'
 
+def get_user_id_from_token():
+    token = request.cookies.get('mytoken')
+    if token is None:
+        return None
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        return payload['id']
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return None
+
 
 ## 라우팅
 # 기본 URL 접속 시 Login 페이지
@@ -235,25 +245,62 @@ def showShareData(shareId):
       # 해당 게시글을 찾지 못한 경우, 실패 메시지를 JSON으로 반환
       return jsonify({'result': 'fail', 'msg': '해당 게시글을 찾을 수 없습니다.'}), 404
 
-# '/addLikes/<shareId>' URL에 대한 POST 요청을 처리
-# 이 함수는 특정 게시글의 '좋아요' 수를 1 증가
-@app.route('/addLikes/<shareId>', methods=['POST'])
-def addLikes(shareId):
-   
-   # shareId를 ObjectId로 변환
-   id = ObjectId(shareId)
-   
-   # 해당 ID를 가진 문서의 'likes' 필드를 1 증가($inc)
-   result = db.shareData.update_one(
-      {"_id": id},
-      {"$inc": {"likes": 1}}
-   )
-   
-   # 업데이트가 성공적으로 이루어졌는지 확인하고 결과를 JSON으로 반환
-   if result.modified_count == 1:
-      return jsonify({'result': 'success'})
-   else:
-      return jsonify({'result': 'fail'})
+# '/toggleLike/<shareId>' URL에 대한 POST 요청을 처리
+# 이 함수는 특정 게시글의 '좋아요' 수를 토글 (증가 또는 감소)
+@app.route('/toggleLike/<shareId>', methods=['POST'])
+def toggleLike(shareId):
+    user_id = get_user_id_from_token()
+    if user_id is None:
+        return jsonify({'result': 'fail', 'msg': '로그인이 필요합니다.'})
+
+    id = ObjectId(shareId)
+    share_data = db.shareData.find_one({"_id": id})
+
+    if not share_data:
+        return jsonify({'result': 'fail', 'msg': '게시글을 찾을 수 없습니다.'})
+
+    liked_by = share_data.get('liked_by', [])
+    current_likes = share_data.get('likes', 0)
+
+    if user_id in liked_by:
+        # 이미 좋아요를 눌렀다면, 좋아요 취소
+        db.shareData.update_one(
+            {"_id": id},
+            {"$pull": {"liked_by": user_id}, "$inc": {"likes": -1}}
+        )
+        new_likes = current_likes - 1
+        liked_status = False
+    else:
+        # 좋아요를 누르지 않았다면, 좋아요 추가
+        db.shareData.update_one(
+            {"_id": id},
+            {"$push": {"liked_by": user_id}, "$inc": {"likes": 1}}
+        )
+        new_likes = current_likes + 1
+        liked_status = True
+    
+    return jsonify({'result': 'success', 'likes': new_likes, 'liked': liked_status})
+
+# '/getLikeStatus/<shareId>' URL에 대한 GET 요청을 처리
+# 이 함수는 특정 게시글에 대한 현재 사용자의 좋아요 상태를 반환
+@app.route('/getLikeStatus/<shareId>', methods=['GET'])
+def getLikeStatus(shareId):
+    user_id = get_user_id_from_token()
+    if user_id is None:
+        return jsonify({'result': 'fail', 'msg': '로그인이 필요합니다.'})
+
+    id = ObjectId(shareId)
+    share_data = db.shareData.find_one({"_id": id})
+
+    if not share_data:
+        return jsonify({'result': 'fail', 'msg': '게시글을 찾을 수 없습니다.'})
+
+    liked_by = share_data.get('liked_by', [])
+    current_likes = share_data.get('likes', 0)
+    
+    liked_status = user_id in liked_by
+    
+    return jsonify({'result': 'success', 'likes': current_likes, 'liked': liked_status})
 
 # '/editShareData/<shareId>' URL에 대한 GET 요청을 처리
 # 이 함수는 기존 게시글을 수정하는 'editShareData.html' 페이지를 렌더링
