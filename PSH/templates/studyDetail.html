@@ -13,20 +13,28 @@
     </div>
 
 
-<form action="{{ url_for('give_num', study_id=study._id|string) }}" method="post">
+
+<div style="display: flex; gap: 10px; align-items: center; margin-left: 900px; ">
+    <form action="{{ url_for('give_num', study_id=study._id|string) }}" method="post">
                 <input type="hidden" name="_id" value="{{ study._id }}">
                 <input type="hidden" name="capacity" value="{{ study.capacity }}">
-                <button style="margin-left: 900px;">신청하기</button>
+                <button >신청하기</button>
     </form>
-
     {% if alert_message %}
-    <script>alert("{{ alert_message }}");</script>
+        <script>
+            alert("{{ alert_message }}");
+        </script>
     {% endif %}
-                <!-- {% if alert_message %}
-            <script>
-                alert("{{ alert_message }}");
-            </script>
-                {% endif %} -->
+
+        {%if true %}
+                <button  onclick="location.href='/study/{{ study._id }}/edit'">수정</button>
+                <form action="/study/delete" method="post">
+                    <input type="hidden" name="_id" value="{{ study._id }}">
+                    <button>삭제</button>
+                </form>
+
+        {% endif %} 
+</div>
     <a href="/">목록으로 돌아가기</a>
 
     

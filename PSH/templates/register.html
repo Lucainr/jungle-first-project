@@ -21,16 +21,19 @@
     <div class="card" style="max-width: 1500px; margin-left: auto; margin-right: 30px;">
         <div class="card-body" style="height: 500px;">
     <h2>스터디 등록</h2>
-    <form action="/submit" method="post">
+    <form action="/submitStudy" method="post">
         제목: <input type="text" name="title" placeholder="제목을 입력하세요" />
-        정원: <input type="number" name="capacity" style="width:50px" required><br><br>
+        정원: <input type="number" name="capacity" style="width:50px" required min="1"><br><br>
         게시글:<br>
         <textarea name="post" rows="5" cols="100" required></textarea><br><br>
-        <input type="submit" value="등록">
+        <!-- <input value="등록"> -->
+        <button>등록</button>
+
         <button onclick="location.href='/'">뒤로가기</button>
         </div>
     </div>
     </form>
+
 
     </div>
 
