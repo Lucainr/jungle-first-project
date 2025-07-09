@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="UTF-8" />
+    <title></title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+        integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery (integrity 삭제) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <style>
+        a{
+            text-decoration-line: none;
+        }
+
+        textarea{
+            resize: none;
+        }
+
+        .form-title{
+            font-size : 3.0rem;
+        }
+    </style>
+    <script>
+        // 문서(document)가 완전히 로드되었을 때 실행될 함수를 설정
+        // jQuery의 $(document).ready()는 HTML이 모두 로드되고 DOM 트리가 완성되었을 때 코드를 실행하도록 보장
+        $(document).ready(function (){
+            // 클래스가 'shareForm'인 폼(<form>)에 'submit' 이벤트 리스너를 추가
+            // 사용자가 폼을 제출하려고 할 때(예: '작성하기' 버튼 클릭) 이 함수가 실행됨
+            $('.shareForm').on('submit', function (e) {
+                // e.preventDefault()는 폼의 기본 제출(submit) 동작을 막고
+                // 기본 동작은 페이지를 새로고침하는 것인데, 우리는 Ajax를 통해 비동기적으로 데이터를 처리할 것이므로 이를 방지
+                e.preventDefault(); // 폼 기본 제출 동작 방지
+                // 폼 데이터 처리를 위해 createShareDataBoard 함수를 호출
+                createShareDataBoard();
+            });
+        })
+
+        // 게시글 데이터를 생성하고 서버로 전송하는 함수
+        function createShareDataBoard(){
+            // 유저가 입력한 제목, 내용, 작성자 정보를 jQuery를 사용해 가져옴
+            let title = $("#shareTitle").val();
+            let content = $("#shareContent").val();
+            let date = Date.now();
+            // 추후 로그인 기능이 구현되면 동적으로 변경
+            let writer = "김김김"
+
+            if(title.length == 0 || content.length == 0){
+                alert("공백인 상태의 글을 업로드 할 수 없습니다.\n제대로 입력한 후 다시 업로드해주세요.")
+            }else{   
+                // jQuery의 Ajax 함수를 사용하여 서버에 비동기적으로 HTTP 요청
+                $.ajax({
+                    type : "POST", // 요청 방식을 POST로 설정합니다.
+                    // 서버로 전송할 데이터를 객체 형태로 지정
+                    // Flask 서버의 request.form['key']에서 'key'에 해당하는 부분
+                    data : {shareTitle : title, shareContent : content, date : date, writer : writer},
+                    // 요청이 성공적으로 완료되었을 때 실행될 콜백 함수
+                    success: function(response){
+                        if (response["result"] == "success") {
+                            alert("포스팅 성공!");
+                            window.location.href = "/shareDataBoardList";
+                        } else {
+                            alert("업로드에 실패하였습니다. 해당 현상이 지속될 경우 고객센터로 문의해주세요.")
+                        }
+                    }
+                })
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="row" style="min-height: 100vh;">
+            <!-- 사이드바 및 카테고리 -->
+            <div class="col-md-3 sidebar d-flex flex-column justify-content-center">
+                <h2>자료 공유</h2>
+                <a href="#">자료 공유</a>
+                <a href="#">우리들의 Q&A</a>
+                <a href="#">스터디 하자!</a>
+            </div>
+            <!-- 글 작성 부분 -->
+            <div class="col-md-9 d-flex justify-content-center align-items-center">
+                <div class="w-75">
+                    <div class="form-title">자료 공유 글 쓰기</div>
+                        <br>
+                        <form class="shareForm">
+                            <div class="mb-3">
+                                <input type="text" class="form-control" placeholder="공유할 자료의 제목을 입력해주세요." id="shareTitle">
+                            </div>
+                            <div class="mb-3">
+                                <textarea class="form-control" rows="10" placeholder="내용을 입력해주세요.." id="shareContent"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success float-end">작성하기</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

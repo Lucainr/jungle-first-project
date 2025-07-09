@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <title>게시글 상세</title>
+     <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+        integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery (integrity 삭제) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <style>
+
+    </style>
+    <script>
+        // 서버(Flask)에서 Jinja2 템플릿을 통해 전달받은 게시글의 고유 ID를 JavaScript 변수에 저장
+        // 이 변수는 페이지 내 여러 함수에서 공통적으로 사용
+        let shareId = "{{ shareId }}";
+
+        // 문서(document)가 완전히 로드되었을 때 실행될 함수를 설정
+        $(document).ready(function(){
+            // 페이지가 로드되자마자 Ajax 요청을 보내 특정 게시글의 상세 데이터를 가져옴
+            $.ajax({
+                type: "GET", // HTTP 요청 방식을 GET으로 설정
+                // 요청을 보낼 URL을 지정함. 백틱(`)을 사용한 템플릿 리터럴로 shareId 변수를 URL에 포함
+                url: `/detail/shareDataBoard/${shareId}`,
+                // 요청이 성공적으로 완료되었을 때 실행될 콜백 함수
+                success: function (response) {
+                    // 서버로부터 받은 응답(response)의 result 값이 "success"인지 확인
+                    if (response.result === "success") {
+                        // 성공 시, 응답으로 받은 데이터를 각 input 필드에 채워넣는다
+                        $("#shareTitle").val(response.title);
+                        $("#shareContent").val(response.content);
+                        $("#writer").val(response.writer);
+                        // 서버에서 받은 타임스탬프(response.date)를 한국 시간 형식의 문자열로 변환하여 표시
+                        $("#date").val(new Date(parseInt(response.date)).toLocaleString("ko-KR"));
+                        $("#likes").val(response.likes);
+                    } else {
+                        // 데이터를 불러오지 못했을 경우 사용자에게 알림을 표시
+                        alert("데이터를 불러오지 못했습니다.");
+                    }
+                }
+            });
+
+        });
+
+        // '수정' 버튼 클릭 시 호출될 함수
+        // 전역(window) 객체에 함수를 할당하여 HTML의 onclick 속성에서 직접 호출할 수 있도록 함
+        window.editShareData = function (){
+            // 현재 게시글을 수정하는 페이지로 이동합니다.
+            window.location.href = "/editShareData/"+shareId;
+        }
+
+        // '삭제' 버튼 클릭 시 호출될 함수
+        window.deleteShareData = function(){
+            // Ajax를 통해 서버에 게시글 삭제를 요청
+            $.ajax({
+                type: "POST", // HTTP 요청 방식을 POST로 설정
+                url: "/deleteShareData/" + shareId, // 삭제를 요청할 URL
+                // 요청이 성공적으로 완료되었을 때 실행될 콜백 함수
+                success: function (response) {
+                    if (response.result === "success") {
+                        alert("게시글이 삭제되었습니다.");
+                        // 삭제 성공 시, 게시판 목록 페이지로 이동
+                        window.location.href = "/shareDataBoardList";
+                    } else {
+                        alert("삭제 실패!");
+                    }
+                },
+                error: function(){
+                    alert("서버 오류 발생");
+                }
+            });
+        }
+
+        // '목록' 버튼 클릭 시 호출될 함수
+        function shareDataList(){
+            // 게시판 목록 페이지로 이동
+            window.location.href = "/shareDataBoardList";
+        }
+
+        // '좋아요' 버튼 클릭 시 호출될 함수
+        function addLikes(){
+            // 좋아요를 추가할 게시글의 ID를 다시 한 번 명시 (전역 변수 shareId를 사용해도 무방함)
+            let shareId = "{{ shareId }}";
+
+            // Ajax를 통해 서버에 '좋아요' 추가를 요청
+            $.ajax({
+                type: "POST", // HTTP 요청 방식을 POST로 설정
+                url: `/addLikes/${shareId}`, // 좋아요 추가를 요청할 URL
+                success: function (response) {
+                    if (response.result === "success") {
+                        // 성공 시, 화면의 '좋아요' 숫자를 1 증가
+                        // 현재 '좋아요' 수를 가져와 숫자로 변환한 뒤 1을 더함
+                        let currentLikes = parseInt($("#likes").val()) + 1;
+                        // 증가된 값을 다시 input 필드에 설정
+                        $("#likes").val(currentLikes);
+                        alert("좋아요 +1 !");
+                    } else {
+                        alert("좋아요 실패!");
+                    }
+                },
+                // 요청 처리 중 오류가 발생했을 때 실행될 콜백 함수
+                error: function(){
+                    alert("서버 오류 발생");
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="col-md-9 d-flex justify-content-center align-items-center">
+            <div class="w-75">
+                <div class="form-title">자료 공유</div>
+                    <br>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="shareTitle" readonly>
+                        <button class="btn btn-success float-end" onclick="addLikes();">👍</button>
+                    </div>
+                    <div class="mb-3">
+                        <textarea class="form-control" rows="10" id="shareContent" readonly></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="writer" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="date" readonly>
+                        <input type="text" class="form-control" id="likes" readonly>
+                    </div>
+                    <div>
+                        <button class="btn btn-white float-end" onclick="editShareData();">수정</button>
+                        <button class="btn btn-white float-end" onclick="deleteShareData();">삭제</button>
+                        <button class="btn btn-success float-end" onclick='shareDataList();'>목록</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

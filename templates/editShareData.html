@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <title>수정</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+        integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery (integrity 삭제) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <style>
+
+    </style>
+    <script>
+        // 문서(document)가 완전히 로드되었을 때 실행될 함수를 설정
+        $(document).ready(function (){
+            // 서버(Flask)에서 Jinja2 템플릿을 통해 전달받은 게시글 데이터를 JavaScript 변수에 저장
+            // '2개의 중괄호 속' 구문은 서버 사이드에서 렌더링될 때 실제 데이터 값으로 대체됨
+            let shareId = "{{ data['_id'] }}";      // 게시글의 고유 ID
+            let title = "{{ data['title'] }}";      // 기존 게시글 제목
+            let content = "{{ data['content'] }}";  // 기존 게시글 내용
+
+            // 페이지가 로드되면, id가 'shareTitle'인 input 요소와 'shareContent'인 textarea 요소에
+            // 위에서 받은 기존 제목과 내용을 채워넣는다.
+            $("#shareTitle").val(title);
+            $("#shareContent").val(content);
+
+            // 클래스가 'shareForm'인 폼(<form>)에 'submit' 이벤트 리스너를 추가
+            // 사용자가 '수정하기' 버튼을 클릭하여 폼을 제출할 때 이 함수가 실행됨
+            $(".shareForm").on("submit", function(e){
+                // e.preventDefault()는 폼의 기본 제출 동작(페이지 새로고침)을 막고
+                // Ajax를 사용하여 비동기적으로 데이터를 처리
+                e.preventDefault();
+
+                // 사용자가 수정한 새로운 제목과 내용을 input과 textarea에서 가져옴
+                let newTitle = $("#shareTitle").val();
+                let newContent = $("#shareContent").val();
+
+                if(newTitle.length == 0 || newContent.length ==  0){
+                    alert("공백인 상태의 글을 수정 할 수 없습니다.\n제대로 입력한 후 다시 실행해주세요.")
+                }else{
+                    // jQuery의 Ajax 함수를 사용하여 서버에 비동기적으로 HTTP 요청을 보냄
+                    $.ajax({
+                        type: "POST", // 요청 방식을 POST로 설정
+                        // 요청을 보낼 URL을 지정합니다. 백틱(`)을 사용한 템플릿 리터럴로 shareId 변수를 URL에 포함
+                        url: `/editShareData/${shareId}`,
+                        // 서버로 전송할 데이터를 객체 형태로 지정 {서버에서 받을 키: 보낼 데이터}
+                        data: { title: newTitle, content: newContent },
+                        // 요청이 성공적으로 완료되었을 때 실행될 콜백 함수
+                        success: function(response){
+                            // 서버로부터 받은 응답(response)의 result 값이 "success"인지 확인
+                            if(response.result === "success"){
+                                // 수정이 완료된 게시글의 상세 보기 페이지로 사용자를 이동
+                                alert("게시글이 성공적으로 수정되었습니다.");
+                                window.location.href = `/shareDataBoard/${shareId}`;
+                            } else {
+                                alert("수정 실패");
+                            }
+                        },
+                        error: function(){
+                            alert("서버 오류");
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="col-md-9 d-flex justify-content-center align-items-center">
+            <div class="w-75">
+                <div class="form-title">자료 공유 글 수정</div>
+                    <br>
+                    <form class="shareForm">
+                        <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="공유할 자료의 제목을 입력해주세요." id="shareTitle">
+                        </div>
+                        <div class="mb-3">
+                            <textarea class="form-control" rows="10" placeholder="내용을 입력해주세요.." id="shareContent"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success float-end">수정하기</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
