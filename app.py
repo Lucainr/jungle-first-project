@@ -3,6 +3,8 @@
 # request: 클라이언트로부터의 요청을 처리하기 위함
 # render_template: HTML 템플릿을 렌더링하기 위함
 # jsonify: 파이썬 딕셔너리를 JSON 응답으로 변환하기 위함
+import jwt
+import datetime
 from flask import Flask, request, render_template, jsonify
 app = Flask(__name__)
 
@@ -13,20 +15,144 @@ from pymongo import MongoClient
 client = MongoClient('mongodb://test:test@15.164.170.54',27017)
 # 'dbjungle'이라는 이름의 데이터베이스를 사용
 db = client.dbjungle
-# 'shareData'라는 이름의 컬렉션을 사용
-collection = db.shareData
 
+# JWT를 위한 비밀 키
+SECRET_KEY = 'JUNGLE'
+
+
+## 라우팅
+# 기본 URL 접속 시 Login 페이지
+@app.route('/')
+def home():
+   return render_template('LoginPage.html')
+
+# 회원가입 페이지
+@app.route('/signup')
+def signup_page():
+    return render_template('SignupPage.html')
+
+
+
+## API
+# 로그인 API
+@app.route('/api/SignIn', methods=['POST'])
+def SignIn():
+    # 1. 클라이언트로부터 데이터 받아오기
+    id_receive = request.form.get('id_give')
+    password_receive = request.form.get('password_give')
+
+    # 2. 비밀번호 암호화
+    import hashlib
+    password_hash = hashlib.sha256(password_receive.encode('utf-8')).hexdigest()
+
+    # 3. DB에서 아이디, 암호화된 비밀번호가 일치하는 사용자가 있는지 확인
+    result = db.users.find_one({'id': id_receive, 'password': password_hash})
+
+    # 4. 사용자가 존재하면, JWT 생성
+    if result is not None:
+        # JWT에 담을 정보 (payload)
+        # 'id'는 사용자를 식별할 수 있는 정보, 'exp'는 토큰의 만료 시간
+        payload = {
+            'id': id_receive,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)  # 1시간 동안 유효?
+        }
+        # JWT 생성
+        token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')   # payload와 SECRET_KEY를 합쳐서 암호화된 토큰(문자열)을 인코딩?
+
+        # 5. 생성한 토큰을 클라이언트에게 보내주기
+        return jsonify({'result': 'success', 'token': token})
+    else:
+        # 사용자가 없다면, 실패 메시지 전송
+        return jsonify({'result': 'fail'})
+    
+# ID 중복 확인 API
+@app.route('/api/CheckId', methods=['POST'])
+def CheckId():
+    id_receive = request.form.get('id_give')
+    existing_id = db.users.find_one({'id': id_receive})
+    if existing_id:
+        return jsonify({'result': 'fail'}) # 중복이면 fail
+    else:
+        return jsonify({'result': 'success'}) # 중복이 아니면 success
+
+# 닉네임 중복 확인 API
+@app.route('/api/CheckUsername', methods=['POST'])
+def CheckUsername():
+    username_receive = request.form.get('username_give')
+    existing_username = db.users.find_one({'username': username_receive})
+    if existing_username:
+        return jsonify({'result': 'fail'})
+    else:
+        return jsonify({'result': 'success'})
+
+# 회원가입 API
+@app.route('/api/SignUp', methods=['POST'])
+def SignUp():
+    # 1. 클라이언트로부터 데이터 받아오기
+    username_receive = request.form.get('username_give')
+    id_receive = request.form.get('id_give')
+    password_receive = request.form.get('password_give')
+    email_receive = request.form.get('email_give')
+
+   # 2. 서버 단에서 최종 중복 확인
+    if db.users.find_one({'id': id_receive}):
+        return jsonify({'result': 'fail_id'})
+    if db.users.find_one({'username': username_receive}):
+        return jsonify({'result': 'fail_username'})
+
+    # 3. 비밀번호 암호화
+    import hashlib
+    password_hash = hashlib.sha256(password_receive.encode('utf-8')).hexdigest()
+
+    # 4. 모든 정보(암호화된 비밀번호 포함)를 DB에 저장
+    user = {
+        'username': username_receive,
+        'password': password_hash, # 암호화된 비밀번호 저장
+        'id': id_receive,
+        'email': email_receive,
+    }
+    db.users.insert_one(user)
+
+    return jsonify({'result': 'success'})
+
+@app.route('/getUserInfo')
+def getUserInfo():
+   token = request.cookies.get('mytoken')
+   
+   if token is None:
+      return jsonify({'result': 'fail'})
+   
+   try:
+      payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+      user_id = payload['id']
+
+      user = db.users.find_one({'id': user_id})
+
+      if user:
+             return jsonify({
+                'result': 'success',
+                'id': user['id'],
+                'username': user['username']
+            })
+      else:
+         return jsonify({'result': 'fail', 'msg': '사용자를 찾을 수 없습니다.'})
+   except jwt.ExpiredSignatureError:
+      return jsonify({'result': 'fail', 'msg': '토큰이 만료되었습니다.'})
+   except jwt.InvalidTokenError:
+      return jsonify({'result': 'fail', 'msg': '유효하지 않은 토큰입니다.'})
+      
+      
 # '/createShareData' URL에 대한 GET 요청을 처리
 # 이 함수는 'createShareData.html' 템플릿을 렌더링하여 사용자에게 보여줌
 # 즉, 새로운 게시글을 작성하는 페이지를 보여주는 역할
 @app.route('/createShareData')
-def home():
+def createShareData():
    return render_template('createShareData.html')
 
 # '/createShareData' URL에 대한 POST 요청을 처리
 # 이 함수는 사용자가 작성한 게시글 데이터를 받아 데이터베이스에 저장
 @app.route('/createShareData', methods=['POST'])
-def createShareData():
+def addShareData():
    # 클라이언트가 보낸 폼(form) 데이터에서 각 필드의 값을 가져옴
    shareTitle = request.form['shareTitle']  # 제목(title)
    shareContent = request.form['shareContent']  # 내용(content)
@@ -37,7 +163,7 @@ def createShareData():
    share = {'title':shareTitle, 'content': shareContent, 'likes': 0, 'date': shareDate, 'writer':shareWriter}
 
    # mongoDb에 데이터를 삽입(insert)
-   collection.insert_one(share)
+   db.shareData.insert_one(share)
    # 성공적으로 처리되었음을 알리는 JSON 응답을 반환
    return jsonify({'result': 'success'})
 
@@ -63,16 +189,24 @@ def readShareDataList():
    offset = (page - 1) * limit
 
    # 전체 게시글 수를 계산
-   total_count = collection.count_documents({})
+   total_count = db.shareData.count_documents({})
    # 전체 페이지 수를 계산 (올림 계산)
    total_pages = math.ceil(total_count / limit)
 
    # MongoDB에서 데이터를 조회할 때, 계산된 offset만큼 건너뛰고 limit만큼만 가져옴
-   paginated_data = list(collection.find({}).sort('date', -1).skip(offset).limit(limit))
+   paginated_data = list(db.shareData.find({}).sort('date', -1).skip(offset).limit(limit))
    
-   # 각 문서의 '_id'를 JSON으로 변환 가능하도록 문자열로 바꿈
+   # 각 게시글마다 writer의 username을 찾아서 추가
    for item in paginated_data:
-       item['_id'] = str(item['_id'])
+      item['_id'] = str(item['_id'])
+      writer_id = item.get('writer')
+
+      # writer id로 users 컬렉션에서 username 찾기
+      user = db.users.find_one({'id': writer_id})
+      if user:
+         item['writerUsername'] = user.get('username')
+      else:
+         item['writerUsername'] = "알 수 없음"  # 만약 없으면 기본값
    
    # 성공 여부, 현재 페이지의 게시글 데이터, 그리고 전체 페이지 수를 함께 JSON으로 반환
    return jsonify({
@@ -97,7 +231,7 @@ def shareDataBoard(shareId):
 @app.route('/detail/shareDataBoard/<shareId>')
 def showShareData(shareId):
    # shareId를 ObjectId로 변환하여 해당 ID를 가진 문서를 찾음
-   data = collection.find_one({"_id": ObjectId(shareId)})
+   data = db.shareData.find_one({"_id": ObjectId(shareId)})
    if data:
       # '_id'를 문자열로 변환
       data['_id'] = str(data['_id'])
@@ -123,7 +257,7 @@ def addLikes(shareId):
    id = ObjectId(shareId)
    
    # 해당 ID를 가진 문서의 'likes' 필드를 1 증가($inc)
-   result = collection.update_one(
+   result = db.shareData.update_one(
       {"_id": id},
       {"$inc": {"likes": 1}}
    )
@@ -139,7 +273,7 @@ def addLikes(shareId):
 # 페이지에 기존 데이터를 채워넣기 위해 먼저 데이터를 조회
 @app.route('/editShareData/<shareId>')
 def editShareData(shareId):
-   data = collection.find_one({"_id": ObjectId(shareId)})
+   data = db.shareData.find_one({"_id": ObjectId(shareId)})
    if data:
       data['_id'] = str(data['_id'])  # '_id'를 문자열로 변환
       # 조회한 데이터를 'editShareData.html' 템플릿에 전달하여 렌더링
@@ -156,7 +290,7 @@ def updateShareData(shareId):
    content = request.form['content']
 
    # 해당 ID를 가진 문서의 'title'과 'content' 필드를 업데이트($set)
-   result = collection.update_one(
+   result = db.shareData.update_one(
       {"_id": ObjectId(shareId)},
       {"$set": {"title": title, "content": content}}
    )
@@ -172,7 +306,7 @@ def updateShareData(shareId):
 @app.route('/deleteShareData/<shareId>', methods=['POST'])
 def deleteShareData(shareId):
    # 해당 ID를 가진 문서를 삭제
-   result = collection.delete_one({"_id": ObjectId(shareId)})
+   result = db.shareData.delete_one({"_id": ObjectId(shareId)})
 
    # 삭제 성공 여부에 따라 결과를 JSON으로 반환
    if result.deleted_count == 1:

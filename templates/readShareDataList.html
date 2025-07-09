@@ -171,7 +171,7 @@
                             shareDatas[i]["title"],
                             shareDatas[i]["likes"],
                             shareDatas[i]["date"],
-                            shareDatas[i]["writer"]
+                            shareDatas[i]["writerUsername"]
                         );
                     }
 
@@ -186,7 +186,7 @@
         }
 
         // 개별 게시글 데이터를 받아 HTML 테이블 행(row)을 생성하는 함수
-        function makeList(id, title, likes, date, writer){
+        function makeList(id, title, likes, date, writerUsername){
             // 서버로부터 받은 타임스탬프(date)를 한국 시간 형식의 문자열로 변환
             let formattedDate = new Date(parseInt(date)).toLocaleString("ko-KR");
             // 백틱(`)을 사용한 템플릿 리터럴로 동적인 HTML 문자열을 생성
@@ -197,7 +197,7 @@
                     </th>
                     <td>${likes}</td>
                     <td>${formattedDate}</td>
-                    <td>${writer}</td>
+                    <td>${writerUsername}</td>
                 </tr>
             `;
             // 생성된 HTML을 id가 'shareDataList'인 tbody 요소에 추가(append)

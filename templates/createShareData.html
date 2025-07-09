@@ -28,9 +28,13 @@
         }
     </style>
     <script>
+        let currentUserId = "";  // 전역 변수로 선언
+
         // 문서(document)가 완전히 로드되었을 때 실행될 함수를 설정
         // jQuery의 $(document).ready()는 HTML이 모두 로드되고 DOM 트리가 완성되었을 때 코드를 실행하도록 보장
         $(document).ready(function (){
+            getUserInfo();
+
             // 클래스가 'shareForm'인 폼(<form>)에 'submit' 이벤트 리스너를 추가
             // 사용자가 폼을 제출하려고 할 때(예: '작성하기' 버튼 클릭) 이 함수가 실행됨
             $('.shareForm').on('submit', function (e) {
@@ -42,6 +46,24 @@
             });
         })
 
+        function getUserInfo() {
+            $.ajax({
+                type: "GET",
+                url: "/getUserInfo",
+                success: function(response) {
+                    if (response.result === "success") {
+                        currentUserId = response.id;  // id를 전역 변수에 저장
+                    } else {
+                        alert("로그인 정보가 없습니다. 로그인 후 이용해주세요.");
+                        window.location.href = "/";
+                    }
+                },
+                error: function() {
+                    alert("유저 정보를 불러오는데 실패했습니다.");
+                }
+            });
+        }
+
         // 게시글 데이터를 생성하고 서버로 전송하는 함수
         function createShareDataBoard(){
             // 유저가 입력한 제목, 내용, 작성자 정보를 jQuery를 사용해 가져옴
@@ -49,7 +71,7 @@
             let content = $("#shareContent").val();
             let date = Date.now();
             // 추후 로그인 기능이 구현되면 동적으로 변경
-            let writer = "김김김"
+            let writer = currentUserId;
 
             if(title.length == 0 || content.length == 0){
                 alert("공백인 상태의 글을 업로드 할 수 없습니다.\n제대로 입력한 후 다시 업로드해주세요.")
