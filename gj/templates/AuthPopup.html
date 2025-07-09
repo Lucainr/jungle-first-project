@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>정글 커뮤니티 - 로그인</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* 팝업 뒷배경 흐림 효과 */
+        .popup-overlay {
+            display: none; /* 기본적으로 숨김 */
+            position: fixed; /* 화면 전체를 덮도록 */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* 반투명 검정 */
+            z-index: 1000; /* 다른 요소들 위에 표시 */
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 팝업 창 스타일 */
+        .auth-popup {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 400px; /* 팝업 너비 조절 */
+        }
+
+        /* 팝업 제목과 입력창 스타일 */
+        .auth-popup h2 {
+            color: #1BD182;
+            margin-bottom: 20px;
+        }
+
+        /* 인증 코드 입력 텍스트 스타일 */
+        .auth-popup input#authCode {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            width: 80%;
+            font-size: 1.1em;
+        }
+
+        /* 인증 버튼 스타일 */
+        .auth-popup button#submitAuth {
+            background-color: #1BD182;
+            color: #fff;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        /* 인증 버튼 호버 효과 */
+        .auth-popup button#submitAuth:hover {
+            background-color: #17a76a;
+        }
+    </style>
+</head>
+<body>
+    <div class="popup-overlay" id="authPopupOverlay">
+        <div class="auth-popup">
+            <h2>Are you Jungler?</h2>
+            <p>입소 시 받은 정글러 인증 코드를 입력하세요.</p>
+            <input type="password" id="authCode" placeholder="인증 코드">
+            <button id="submitAuth" onclick="checkAuthCode()">인증</button>
+        </div>
+    </div>
+</body>
+</html>

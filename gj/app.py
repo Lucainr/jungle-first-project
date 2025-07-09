@@ -1,7 +1,7 @@
 import jwt # jwt 라이브러리 임포트
 import datetime # 유효기간 설정을 위한 라이브러리
 from pymongo import MongoClient
-from flask import Flask, render_template, request, jsonify # request, jsonify 추가
+from flask import Flask, render_template, request, jsonify, redirect, url_for # request, jsonify 추가
 import random # 랜덤 숫자 생성을 위한 라이브러리
 import smtplib
 from email.mime.text import MIMEText
@@ -201,5 +201,77 @@ def ResetPassword():
     except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
         return jsonify({'result': 'fail', 'msg': '인증 시간이 만료되었습니다. 다시 시도해주세요.'})
 
+# app.py의 페이지 렌더링 부분에 추가
+@app.route('/AccountEditPage')
+def AccountEditPage():
+    # 토큰을 통해 로그인 여부 확인
+    token_receive = request.cookies.get('mytoken')
+    try:
+        # 토큰이 유효하면 AccountEditPage.html을 보여줌
+        jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+        return render_template('AccountEditPage.html')
+    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        # 토큰이 없거나 유효하지 않으면 로그인 페이지로 리다이렉트
+        return redirect(url_for("home"))
+
+# --- API 부분에 아래 3개 추가 ---
+
+# [추가] 내 정보 가져오기 API
+@app.route('/api/get-my-info', methods=['GET'])
+def getMyInfo():
+    token_receive = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+        user_id = payload['id']
+        
+        # DB에서 해당 ID의 사용자 정보를 찾음 (비밀번호는 제외)
+        user_info = db.users.find_one({'id': user_id}, {'_id': 0, 'password': 0})
+        
+        return jsonify({'result': 'success', 'user_info': user_info})
+    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        return jsonify({'result': 'fail', 'msg': '로그인이 필요합니다.'})
+
+# [수정] updateMyInfo API (기존 함수를 이걸로 교체)
+@app.route('/api/update-my-info', methods=['POST'])
+def updateMyInfo():
+    token_receive = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+        user_id = payload['id']
+
+        username_receive = request.form.get('username_give')
+        email_receive = request.form.get('email_give')
+        new_password_receive = request.form.get('password_give')
+
+        # 이메일, 닉네임 중복 재확인 (다른 사람이 그 사이에 바꿨을 수도 있으므로)
+        if db.users.find_one({'username': username_receive, 'id': {'$ne': user_id}}):
+            return jsonify({'result': 'fail', 'msg': '이미 존재하는 닉네임입니다.'})
+        if db.users.find_one({'email': email_receive, 'id': {'$ne': user_id}}):
+            return jsonify({'result': 'fail', 'msg': '이미 존재하는 이메일입니다.'})
+
+        doc = {'username': username_receive, 'email': email_receive}
+        if new_password_receive:
+            new_password_hash = hashlib.sha256(new_password_receive.encode('utf-8')).hexdigest()
+            doc['password'] = new_password_hash
+
+        db.users.update_one({'id': user_id}, {'$set': doc})
+        return jsonify({'result': 'success', 'msg': '정보가 수정되었습니다.'})
+    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        return jsonify({'result': 'fail', 'msg': '로그인이 필요합니다.'})
+    
+@app.route('/api/check-email', methods=['POST'])
+def CheckEmail():
+    email_receive = request.form.get('email_give')
+
+    # DB에서 해당 이메일을 가진 사용자가 있는지 확인
+    existing_email = db.users.find_one({'email': email_receive})
+
+    # 이메일이 존재하기만 하면 fail 응답 (누가 쓰든 상관없이)
+    if existing_email:
+        return jsonify({'result': 'fail'})
+    else:
+        return jsonify({'result': 'success'})
+
+
 if __name__ == '__main__':
-   app.run('0.0.0.0', port=9392, debug=True)
+   app.run('0.0.0.0', port=9391, debug=True)

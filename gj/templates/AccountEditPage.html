@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>회원정보 수정</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body, html { margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; background-color: #f8f9fa; }
+        .main-container { display: flex; height: 100vh; }
+
+        .sidebar { width: 280px; background-color: #1BD182; color: white; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+        .user-profile { margin-top: 80px; text-align: center; }
+        .user-profile .icon { font-size: 80px; margin-bottom: 20px; }
+        .user-profile .username { font-size: 1.5em; font-weight: 700; }
+
+        .main-content { flex: 1; padding: 40px 60px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e9ecef; padding-bottom: 20px; margin-bottom: 40px; }
+        .page-header img { height: 40px; }
+        .header-actions a { color: #868e96; text-decoration: none; margin-left: 20px; font-weight: 500; }
+        
+        .edit-form h1 { font-size: 2em; margin-bottom: 40px;}
+        .edit-form label { display: block; margin: 25px 0 10px 0; font-weight: 700; }
+        .edit-form input[type="text"],
+        .edit-form input[type="password"] {
+            width: 100%; padding: 12px; border: 1px solid #ced4da;
+            border-radius: 5px; box-sizing: border-box;
+        }
+        .input-group { display: flex; }
+        .input-group input { flex-grow: 1; }
+        
+        /* [수정] 버튼 글자 줄바꿈 방지 속성 추가 */
+        .input-group button { 
+            margin-left: 10px; padding: 12px 15px; border: none; 
+            background-color: #6c757d; color: white; border-radius: 5px; 
+            cursor: pointer; white-space: nowrap; 
+        }
+
+        .btn-save { width: 100%; padding: 15px; background-color: #343a40; color: white; border: none; border-radius: 5px; font-size: 1.1em; font-weight: 700; cursor: pointer; margin-top: 40px; }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="user-profile">
+                <div class="icon"><i class="fas fa-user-circle"></i></div>
+                <div class="username" id="profile-username">로딩 중...</div>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="page-header">
+                <img src="{{ url_for('static', filename='image/junglelogo.png') }}" alt="정글 로고">
+                <div class="header-actions">
+                    <a href="#">회원정보수정</a>
+                    <a href="#" onclick="logout()">로그아웃</a>
+                </div>
+            </div>
+            
+            <div class="edit-form">
+                <h1>개인정보 수정</h1>
+                <label for="password">비밀번호</label>
+                <input type="password" id="password" placeholder="변경할 경우에만 입력">
+
+                <label for="confirm_password">비밀번호 확인</label>
+                <input type="password" id="confirm_password">
+
+                <label for="username">이름</label>
+                <div class="input-group">
+                    <input type="text" id="username">
+                    <button onclick="checkUsername()">중복확인</button>
+                </div>
+                
+                <label for="email">이메일</label>
+                <div class="input-group">
+                    <input type="text" id="email">
+                    <button onclick="checkEmail()">중복확인</button>
+                </div>
+
+                <button class="btn-save" onclick="updateMyInfo()">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+    <script>
+        $(document).ready(function () {
+            // 페이지 로딩 시 내 정보 가져오기
+            $.ajax({
+                type: "GET", url: "/api/get-my-info",
+                success: function (response) {
+                    if (response.result === 'success') {
+                        let userInfo = response.user_info;
+                        $('#profile-username').text(userInfo.username);
+                        $('#username').val(userInfo.username);
+                        $('#email').val(userInfo.email);
+                    } else {
+                        alert(response.msg); window.location.href = '/';
+                    }
+                }
+            });
+        });
+        
+        // [수정] 이메일 중복 확인 함수 추가
+        function checkEmail() {
+            let email = $('#email').val();
+            $.ajax({
+                type: "POST", url: "/api/check-email",
+                data: { email_give: email },
+                success: function (response) {
+                    if (response.result === 'success') {
+                        alert("사용 가능한 이메일입니다!");
+                    } else { alert("이미 사용 중인 이메일입니다."); }
+                }
+            });
+        }
+        
+        function checkUsername() {
+            let username = $('#username').val();
+            $.ajax({
+                type: "POST", url: "/api/CheckUsername",
+                data: { username_give: username },
+                success: function (response) {
+                    if (response.result === 'success') {
+                        alert("사용 가능한 닉네임입니다!");
+                    } else { alert("이미 사용 중인 닉네임입니다."); }
+                }
+            });
+        }
+
+        function updateMyInfo() {
+            let password = $('#password').val();
+            let confirmPassword = $('#confirm_password').val();
+            let username = $('#username').val();
+            let email = $('#email').val();
+
+            if (password !== confirmPassword) {
+                alert("새 비밀번호가 일치하지 않습니다.");
+                return;
+            }
+
+            $.ajax({
+                type: "POST", url: "/api/update-my-info",
+                data: {
+                    password_give: password, // 비어있으면 서버에서 처리 안 함
+                    username_give: username,
+                    email_give: email
+                },
+                success: function (response) {
+                    if (response.result === 'success') {
+                        alert("정보가 성공적으로 수정되었습니다.");
+                        window.location.reload();
+                    } else {
+                        alert(response.msg);
+                    }
+                }
+            });
+        }
+
+        function logout() {
+            // 쿠키 삭제
+            $.removeCookie('mytoken', {path: '/'});
+            alert('로그아웃 되었습니다.');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>
