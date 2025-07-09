@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <title>자료 공유</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+        integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery (integrity 삭제) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <style>
+        header{
+            max-height: 200px;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 50px;
+        }
+
+        /* 기본 리셋 */
+        body {
+            margin: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        /* 헤더 스타일 */
+        header {
+            display: flex;
+            align-items: center;
+            padding: 30px;
+        }
+
+        .logo {
+            width: 150px;
+            height: auto;
+        }
+
+        /* 큰 제목 */
+        h2 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0 0 20px 0;
+        }
+
+        /* 컨테이너 레이아웃 */
+        .container {
+            display: flex;
+            padding: 20px 50px;
+        }
+
+        /* 왼쪽 사이드바 */
+        .sidebar {
+            flex: 0 0 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-right: 30px;
+        }
+
+        .sidebar a {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: black;
+            text-decoration: none;
+        }
+
+        .sidebar a:first-child {
+            color: #1BD182;
+            font-weight: bold;
+        }
+
+        /* 본문 리스트 */
+        .content-area {
+            flex: 1;
+        }
+
+        /* 글 작성 버튼 */
+        .write-btn {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .write-btn button {
+            background-color: #1BD182;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .write-btn button:hover {
+            background-color: #1BD182;
+        }
+
+        /* 테이블 스타일 */
+        .table {
+            width: 100%;
+        }
+
+        .table th a {
+            color: black;
+            text-decoration: none;
+            font-size: 1.2rem;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        /* 날짜, 좋아요 등 작은 글씨 */
+        .table td small {
+            color: #aaa;
+        }
+
+        /* 페이지네이션 */
+        .pagination .page-item.active .page-link {
+            background-color: #1BD182;
+            border-color: #1BD182;
+        }
+
+        .pagination .page-link {
+            color: #1BD182;
+        }
+
+        .pagination .page-link:hover {
+            background-color: #1BD182;
+            color: white;
+        }
+    </style>
+
+    <script>
+        // 문서(document)가 완전히 로드되었을 때(DOM이 준비되었을 때) 지정된 함수를 실행합니다.
+        $(document).ready(function (){
+            // 페이지가 로드되면 첫 번째 페이지의 게시글 목록을 불러옵니다.
+            readShareDataList(1);
+        });
+
+        // 특정 페이지의 게시글 목록 데이터를 서버로부터 받아오는 함수
+        function readShareDataList(page){
+            // jQuery의 Ajax를 사용하여 서버에 비동기 GET 요청을 보냄
+            $.ajax({
+                type : "GET", // HTTP 요청 방식을 GET으로 설정
+                url: "/readShareDataList?page=" + page, // 데이터를 요청할 URL에 페이지 번호를 파라미터로 추가
+                dataType: "json", // 서버로부터 받을 데이터 타입을 JSON으로 기대
+                success: function(response){
+                    // 요청이 성공하면, 먼저 기존의 게시글 목록을 비움
+                    $('#shareDataList').empty();
+
+                    // 서버 응답에서 'shareDatas' 키에 해당하는 게시글 배열을 가져옴
+                    let shareDatas = response["shareDatas"];
+                    if (!shareDatas) {
+                        console.error("No shareDatas in response");
+                        return;
+                    }
+                    // for 루프를 사용하여 받아온 게시글 배열을 순회
+                    for (let i = 0; i < shareDatas.length; i++) { 
+                        // 각 게시글에 대한 정보를 makeList 함수에 전달하여 화면에 표시
+                        makeList(
+                            shareDatas[i]["_id"],
+                            shareDatas[i]["title"],
+                            shareDatas[i]["likes"],
+                            shareDatas[i]["date"],
+                            shareDatas[i]["writerUsername"]
+                        );
+                    }
+
+                    // 서버로부터 받은 전체 페이지 수와 현재 페이지 번호를 사용하여 페이지네이션 제작
+                    let total_pages = response['total_pages'];
+                    drawPagination(total_pages, page);
+                },
+                error: function(xhr, status, error){
+                    console.error("AJAX Error: ", status, error);
+                }
+            });
+        }
+
+        // 개별 게시글 데이터를 받아 HTML 테이블 행(row)을 생성하는 함수
+        function makeList(id, title, likes, date, writerUsername){
+            // 서버로부터 받은 타임스탬프(date)를 한국 시간 형식의 문자열로 변환
+            let formattedDate = new Date(parseInt(date)).toLocaleString("ko-KR");
+            // 백틱(`)을 사용한 템플릿 리터럴로 동적인 HTML 문자열을 생성
+            let shareDataHtml = `
+                <tr>
+                    <th scope="row">
+                        <a href="http://localhost:5001/shareDataBoard/${id}">${title}</a>
+                    </th>
+                    <td>${likes}</td>
+                    <td>${formattedDate}</td>
+                    <td>${writerUsername}</td>
+                </tr>
+            `;
+            // 생성된 HTML을 id가 'shareDataList'인 tbody 요소에 추가(append)
+            $("#shareDataList").append(shareDataHtml);
+        }
+
+        // 페이지네이션 UI를 동적으로 생성하는 함수
+        function drawPagination(total_pages, current_page) {
+            // 먼저 기존의 페이지네이션 내용을 비움
+            $('#pagination').empty();
+
+            // for 루프를 돌며 전체 페이지 수만큼 페이지 번호 버튼을 생성
+            for (let i = 1; i <= total_pages; i++) {
+                // 현재 보고 있는 페이지와 루프의 페이지 번호가 같으면 'active' 클래스를, 아니면 빈 문자열을 할당
+                let active_class = (i === current_page) ? 'active' : '';
+                // 각 페이지 번호에 해당하는 li와 a 태그를 생성합니다. a 태그의 onclick 이벤트에는 readShareDataList 함수를 호출하도록 설정
+                let page_link = `
+                    <li class="page-item ${active_class}">
+                        <a class="page-link" href="#" onclick="readShareDataList(${i})">${i}</a>
+                    </li>
+                `;
+                // 생성된 페이지 번호 버튼을 pagination 컨테이너에 추가
+                $('#pagination').append(page_link);
+            }
+        }
+
+        // '글 작성' 버튼 클릭 시 호출될 함수
+        function createShareData(){
+            // 새로운 게시글을 작성하는 페이지('/createShareData')로 이동합
+            window.location.href = "/createShareData";
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <img src="{{ url_for('static', filename='image/junglelogo.png') }}" class="logo">
+    </header>
+
+    <div class="container">
+        <div class="sidebar">
+            <h2>자료 공유</h2>
+            <a href="#">자료 공유</a>
+            <a href="#">우리들의 Q&A</a>
+            <a href="#">스터디 하자!</a>
+        </div>
+
+        <div class="content-area">
+            <div class="write-btn">
+                <button onclick="createShareData();">작성하기</button>
+            </div>
+
+            <table class="table">
+                <tbody id="shareDataList">
+                    <!-- 자바스크립트로 동적 추가 -->
+                </tbody>
+            </table>
+
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center" id="pagination"></ul>
+            </nav>
+        </div>
+    </div>
+</body>
+</html>
