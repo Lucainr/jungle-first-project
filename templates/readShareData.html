@@ -23,8 +23,8 @@
             <a href="/main"><img src="{{ url_for('static', filename='image/junglelogo.png') }}" class="logo-nav"
                     alt="정글 로고"></a>
             <div class="nav-menu">
-                <a href="/shareDataBoard">자료 공유</a>
-                <a href="#">우리들의 Q&A</a>
+                <a href="/shareDataBoardList">자료 공유</a>
+                <a href="/qnaBoardList">우리들의 Q&A</a>
                 <a href="/goToStudy">스터디 하자</a>
             </div>
             <div class="user-actions">
@@ -272,9 +272,9 @@
 
         // '수정' 버튼 클릭 시 호출될 함수
         // 전역(window) 객체에 함수를 할당하여 HTML의 onclick 속성에서 직접 호출할 수 있도록 함
-        window.editQnaBoard = function () {
+        window.editShareData = function () {
             // 현재 게시글을 수정하는 페이지로 이동합니다.
-            window.location.href = "/editQnaBoard/" + shareId;
+            window.location.href = "/editShareData/" + shareId;
         }
 
         // '삭제' 버튼 클릭 시 호출될 함수
@@ -282,13 +282,13 @@
             // Ajax를 통해 서버에 게시글 삭제를 요청
             $.ajax({
                 type: "POST", // HTTP 요청 방식을 POST로 설정
-                url: "/deleteQnaBoard/" + shareId, // 삭제를 요청할 URL
+                url: "/deleteShareData/" + shareId, // 삭제를 요청할 URL
                 // 요청이 성공적으로 완료되었을 때 실행될 콜백 함수
                 success: function (response) {
                     if (response.result === "success") {
                         alert("게시글이 삭제되었습니다.");
                         // 삭제 성공 시, 게시판 목록 페이지로 이동
-                        window.location.href = "/qnaBoardList";
+                        window.location.href = "/shareDataBoardList";
                     } else {
                         alert("삭제 실패!");
                     }

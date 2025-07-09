@@ -4,13 +4,14 @@
 # render_template: HTML 템플릿을 렌더링하기 위함
 # jsonify: 파이썬 딕셔너리를 JSON 응답으로 변환하기 위함
 import jwt # jwt 라이브러리 임포트
-import datetime # 유효기간 설정을 위한 라이브러리
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash # request, jsonify 추가
 import random # 랜덤 숫자 생성을 위한 라이브러리
 import smtplib
 from email.mime.text import MIMEText
 import hashlib # 비밀번호 암호화를 위한 라이브러리
 import math
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 # MongoDB와 상호작용하기 위한 pymongo 라이브러리를 가져옴
 from pymongo import MongoClient
@@ -51,7 +52,49 @@ def signup_page():
 def findAccountPage():
     return render_template('FindAccountPopup.html')
 
+@app.route('/main')
+def mainPage():
+    token_receive = request.cookies.get('mytoken')
+    try:
+        # --- 1. 이달의 정글러 찾기 ---
+        # 이번 달 1일과 마지막 날 계산
+        now = datetime.now()
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_of_month = start_of_month + relativedelta(months=1) - timedelta(seconds=1)
 
+        # MongoDB Aggregation Pipeline을 사용해 가장 좋아요를 많이 받은 사용자 찾기
+        pipeline = [
+            {'$match': {'created_at': {'$gte': start_of_month, '$lte': end_of_month}}},
+            {'$group': {'_id': '$author_id', 'total_likes': {'$sum': '$likes'}, 'post_title': {'$first': '$title'}}},
+            {'$sort': {'total_likes': -1}},
+            {'$limit': 1}
+        ]
+        result = list(db.posts.aggregate(pipeline))
+        
+        jungler_of_month = None
+        if result:
+            top_user_id = result[0]['_id']
+            top_user = db.users.find_one({'id': top_user_id})
+            if top_user:
+                jungler_of_month = {
+                    'username': top_user['username'],
+                    'post_title': result[0]['post_title']
+                }
+
+        # --- 2. 각 게시판 별 최신 글 3개 가져오기 ---
+        share_posts = list(db.posts.find({'board_type': '자료 공유'}).sort('created_at', -1).limit(3))
+        qna_posts = list(db.posts.find({'board_type': '우리들의 Q&A'}).sort('created_at', -1).limit(3))
+        study_posts = list(db.posts.find({'board_type': '스터디 하자'}).sort('created_at', -1).limit(3))
+
+        # --- 3. 템플릿에 데이터 전달 ---
+        return render_template('MainPage.html', 
+                               jungler=jungler_of_month,
+                               share_posts=share_posts,
+                               qna_posts=qna_posts,
+                               study_posts=study_posts)
+
+    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        return redirect(url_for("home"))
 
 ## API
 # 로그인 API
@@ -74,7 +117,7 @@ def SignIn():
         # 'id'는 사용자를 식별할 수 있는 정보, 'exp'는 토큰의 만료 시간
         payload = {
             'id': id_receive,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)  # 1시간 동안 유효?
+            'exp': datetime.utcnow() + timedelta(hours=1)  # 1시간 동안 유효?
         }
         # JWT 생성
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')   # payload와 SECRET_KEY를 합쳐서 암호화된 토큰(문자열)을 인코딩?
@@ -150,8 +193,7 @@ def SendAuthEmail():
     auth_code = str(random.randint(1000, 9999))
     user_id = user['id']
 
-    # --- 실제 이메일 발송 로직 ---
-    # ⚠️ 주의: 실제 서비스에서는 이메일, 비밀번호를 코드에 직접 쓰지 말고, 환경변수 등을 사용해야 해!
+    # 실제 이메일 발송 로직
     sender_email = "junglerKrafton@gmail.com"  # 보내는 사람 구글 이메일
     sender_password = "oulnhdmxinqdalkd"   # 위에서 발급받은 16자리 앱 비밀번호
 
@@ -171,7 +213,7 @@ def SendAuthEmail():
     payload = {
         'id': user_id,
         'auth_code': auth_code,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=5) # 5분간 유효
+        'exp': datetime.utcnow() + timedelta(minutes=5) # 5분간 유효
     }
     temp_token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
@@ -218,7 +260,21 @@ def ResetPassword():
         
     except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
         return jsonify({'result': 'fail', 'msg': '인증 시간이 만료되었습니다. 다시 시도해주세요.'})
-    
+
+# app.py의 페이지 렌더링 부분에 추가
+@app.route('/AccountEditPage')
+def AccountEditPage():
+    # 토큰을 통해 로그인 여부 확인
+    token_receive = request.cookies.get('mytoken')
+    try:
+        # 토큰이 유효하면 AccountEditPage.html을 보여줌
+        jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+        return render_template('AccountEditPage.html')
+    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        # 토큰이 없거나 유효하지 않으면 로그인 페이지로 리다이렉트
+        return redirect(url_for("home"))
+
+
 # 내 정보 가져오기 API
 @app.route('/api/getMyInfo', methods=['GET'])
 def getMyInfo():
@@ -233,6 +289,47 @@ def getMyInfo():
         return jsonify({'result': 'success', 'user_info': user_info})
     except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
         return jsonify({'result': 'fail', 'msg': '로그인이 필요합니다.'})
+
+# 회원 정보 수정 API
+@app.route('/api/update-my-info', methods=['POST'])
+def updateMyInfo():
+    token_receive = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+        user_id = payload['id']
+
+        username_receive = request.form.get('username_give')
+        email_receive = request.form.get('email_give')
+        new_password_receive = request.form.get('password_give')
+
+        # 이메일, 닉네임 중복 재확인 (다른 사람이 그 사이에 바꿨을 수도 있으므로)
+        if db.users.find_one({'username': username_receive, 'id': {'$ne': user_id}}):
+            return jsonify({'result': 'fail', 'msg': '이미 존재하는 닉네임입니다.'})
+        if db.users.find_one({'email': email_receive, 'id': {'$ne': user_id}}):
+            return jsonify({'result': 'fail', 'msg': '이미 존재하는 이메일입니다.'})
+
+        doc = {'username': username_receive, 'email': email_receive}
+        if new_password_receive:
+            new_password_hash = hashlib.sha256(new_password_receive.encode('utf-8')).hexdigest()
+            doc['password'] = new_password_hash
+
+        db.users.update_one({'id': user_id}, {'$set': doc})
+        return jsonify({'result': 'success', 'msg': '정보가 수정되었습니다.'})
+    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        return jsonify({'result': 'fail', 'msg': '로그인이 필요합니다.'})
+    
+@app.route('/api/check-email', methods=['POST'])
+def CheckEmail():
+    email_receive = request.form.get('email_give')
+
+    # DB에서 해당 이메일을 가진 사용자가 있는지 확인
+    existing_email = db.users.find_one({'email': email_receive})
+
+    # 이메일이 존재하기만 하면 fail 응답 (누가 쓰든 상관없이)
+    if existing_email:
+        return jsonify({'result': 'fail'})
+    else:
+        return jsonify({'result': 'success'})
 
 
 @app.route('/getUserInfo')
@@ -324,7 +421,7 @@ def shareDataBoardList():
       try:
           date_timestamp = item.get('date')
           # JavaScript의 Date.now()는 밀리초 단위이므로 1000으로 나누어 초 단위로 변환
-          dt_object = datetime.datetime.fromtimestamp(int(date_timestamp) / 1000)
+          dt_object = datetime.fromtimestamp(int(date_timestamp) / 1000)
           item['formatted_date'] = dt_object.strftime('%Y-%m-%d %H:%M')
       except (ValueError, TypeError):
           # 날짜 데이터가 없거나, 비어있거나, 잘못된 형식일 경우
@@ -356,7 +453,7 @@ def add_comment():
         'user_id': user_id,
         'username': username,
         'comment_content': comment_content,
-        'timestamp': datetime.datetime.now()
+        'timestamp': datetime.now()
     }
     db.comments.insert_one(comment)
     return jsonify({'result': 'success'})
@@ -527,16 +624,38 @@ def main():
 
 @app.route('/study/<study_id>')
 def study_detail(study_id):
+
+    # 1. 쿠키에서 토큰 꺼내기
+    token_receive = request.cookies.get('mytoken')
+
+        
+    try:
+            # 2. 토큰 디코딩
+            payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+            user_id = payload['id']
+            user_data = db.users.find_one({'id': user_id})
+            username = user_data['username'] if user_data else "알 수 없음"
+            
+    except (jwt.ExpiredSignatureError, jwt.DecodeError, jwt.InvalidTokenError):
+            user_id = "알 수 없음"
+            username = "알 수 없음"
+
+
+    #user에서 data 받아오기
+    user_data = db.users.find_one({'id' : user_id})
+
+
     try: #ID는 원래 string 타입이 아님 따라서 변환 필요
         obj_id = ObjectId(study_id)
     except:
         return "유효하지 않은 ID입니다.", 400
     #아이디 찾으면
     study = db.studies.find_one({'_id': obj_id})
+
     if not study:
         return "존재하지 않는 스터디입니다.", 404
     #studyDetail에게 study 값 전달
-    return render_template('studyDetail.html', study=study)
+    return render_template('studyDetail.html', study=study, user_data=user_data, current_user_id=user_id)
 
 
 @app.route('/study/<study_id>/edit', methods=['GET', 'POST'])
@@ -569,7 +688,6 @@ def submit_study():
     if request.method == 'POST':
         # 1. 쿠키에서 토큰 꺼내기
         token_receive = request.cookies.get('mytoken')
-
         
         try:
             # 2. 토큰 디코딩
@@ -587,7 +705,7 @@ def submit_study():
         capacity = request.form.get('capacity')
         post = request.form.get('post')
         title = request.form.get('title')
-        createdTime = datetime.datetime.now()
+        createdTime = datetime.now()
 
         print(username)
         # 4. MongoDB에 저장
@@ -612,6 +730,7 @@ def submit_study():
     else:
         #studies = list(db.studies.find({}, {'_id': False}))
         #return render_template('result.html', studies=studies)
+
         return render_template('register.html')
     
 
@@ -628,25 +747,25 @@ def delete_study():
     flash("삭제 완료!")
     return redirect(url_for('main'))  # main 함수 이름에 맞게 변경하세요
 
-
-
-
     #정원 +1 되게 해주는 거
 @app.route('/study/<study_id>', methods=['POST'])
 def give_num(study_id):
 
     id = request.form.get('_id')
-    #capacity = request.form.get('capacity')
+
     capacity = int(request.form.get('capacity', 0))
 
     try:
-        id = ObjectId(id)
+        Obj_id = ObjectId(id)
     except:
         return "유효하지 않은 ID입니다.", 400
+    
 
-    get_Id = db.studies.find_one({'_id': id})
-    if not get_Id:
+    study = db.studies.find_one({'_id': Obj_id})
+    if not study:
         return "해당 ID가 존재하지 않습니다.", 404
+    
+
     
     # 2. JWT에서 신청자 정보 꺼내기
     token = request.cookies.get('mytoken')
@@ -656,7 +775,7 @@ def give_num(study_id):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         applicant_id = payload.get('id') # 토큰에서 꺼낸 payload 에서 id를 꺼냄
-
+        current_user_id = payload.get('id')
         user_data = db.users.find_one({'id': applicant_id})
         applicant_username = user_data['username'] if user_data and 'username' in user_data else "알 수 없음"
 
@@ -664,12 +783,16 @@ def give_num(study_id):
         applicant_id = '알 수 없음'
         applicant_username = '알 수 없음'
 
+    # 같은 아이디 중복 신청 체크
+    applicants = study.get('applicants', [])
+    if any(applicant['applied_id'] == current_user_id for applicant in applicants):
+        return render_template('studyDetail.html', study=study, current_user_id=current_user_id, alert_user="이미 신청하셨습니다!")
     
-    new_number = get_Id.get('number', 0) + 1
+    new_number = study.get('number', 0) + 1
     ##정원초과면 alert 나오게 함 # 3. 정원 체크
     if new_number > capacity:
         study = db.studies.find_one({'_id': id})
-        return render_template('studyDetail.html', alert_message="정원을 초과하였습니다!" ,study=study)
+        return render_template('studyDetail.html', alert_number="정원을 초과하였습니다!" ,study=study,current_user_id=applicant_id)
     
     else:
         db.studies.update_one(
@@ -680,11 +803,11 @@ def give_num(study_id):
         }
         )
         #새로고침의 효과
-        updated_study = db.studies.find_one({'_id': id})
+        updated_study = db.studies.find_one({'_id': Obj_id})
 
-        return render_template('studyDetail.html', study=updated_study)
-
-# '/createShareData' URL에 대한 GET 요청을 처리
+        return render_template('studyDetail.html', study=updated_study, current_user_id=applicant_id, alert_new="신청되었습니다!")
+    
+# '/create' URL에 대한 GET 요청을 처리
 # 이 함수는 'createQnaBoard.html' 템플릿을 렌더링하여 사용자에게 보여줌
 # 즉, 새로운 게시글을 작성하는 페이지를 보여주는 역할
 @app.route('/createQnaBoard')
@@ -746,7 +869,7 @@ def qnaBoardList():
       try:
           date_timestamp = item.get('date')
           # JavaScript의 Date.now()는 밀리초 단위이므로 1000으로 나누어 초 단위로 변환
-          dt_object = datetime.datetime.fromtimestamp(int(date_timestamp) / 1000)
+          dt_object = datetime.fromtimestamp(int(date_timestamp) / 1000)
           item['formatted_date'] = dt_object.strftime('%Y-%m-%d %H:%M')
       except (ValueError, TypeError):
           # 날짜 데이터가 없거나, 비어있거나, 잘못된 형식일 경우

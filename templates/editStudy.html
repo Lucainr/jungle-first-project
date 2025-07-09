@@ -1,25 +1,302 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-    <meta charset="UTF-8" />
-    <title>스터디 수정</title>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* 기본 여백 제거 및 전체 폰트/높이 설정 */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* --- 상단 네비게이션 바 --- */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            /* 양쪽 끝으로 요소 정렬 */
+            align-items: center;
+            padding: 0px 40px;
+            background-color: white;
+            width: 100%;
+            box-sizing: border-box;
+            border-bottom: 3px solid #1BD182;
+        }
+
+        /* 로고 크기 조정 */
+        .navbar .logo-nav {
+            height: 200px;
+        }
+
+        /* 게시판 메뉴 스타일 */
+        .navbar .nav-menu {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            /* 메뉴 아이템들을 중앙에 정렬 */
+            gap: 150px;
+            /* 메뉴 사이 간격 */
+            font-size: 1.5em;
+            /* 폰트 크기 조정 */
+            font-weight: 700;
+        }
+
+        /* 회원정보수정/로그아웃 갭, 크기 스타일 */
+        .navbar .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.9em;
+        }
+
+        /* 회원정보수정 버튼 스타일 */
+        .navbar .user-actions .btn-mypage {
+            background-color: #1BD182;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+
+        /* --- 전체 레이아웃 --- */
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* 상단 띠 제거 및 navbar 아래 테두리 초록색으로 변경 */
+        .main-container {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+            /* 스크롤바가 이상하게 생기는 것을 방지 */
+        }
+
+        /* --- 왼쪽 초록 사이드바 --- */
+        .sidebar {
+            width: 280px;
+            background-color: #1BD182;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 80px;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        /* 사이드바 프로필 사진 스타일 */
+        .sidebar .user-profile .icon {
+            font-size: 80px;
+            margin-bottom: 15px;
+        }
+
+        /* 사이드바 사용자 이름 스타일 */
+        .sidebar .user-profile .username {
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+         /* 사이드바 메뉴 스타일 추가 */
+        .sidebar .side-nav {
+            margin-top: 80px; /* 유저 프로필과 간격 */
+            width: 100%;
+        }
+        /* 사이드바 메뉴 링크 스타일 */
+        .sidebar .side-nav a {
+            display: block;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: white;
+            position: relative;
+        }
+        /* 사이드바 메뉴 링크 호버 스타일 */
+        .sidebar .side-nav a.active {
+            background-color: rgba(0,0,0,0.1);
+        }
+        /* 사이드바 메뉴 링크 활성화 스타일 */
+        .sidebar .side-nav a.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 5px;
+            height: 100%;
+            background-color: white;
+        }
+
+        /* --- 메인 영역 크기 --- */
+        .main-content {
+            flex-grow: 1;
+            padding: 50px 80px;
+            overflow-y: auto;
+            /* 내용이 길어지면 이 부분만 스크롤됨 */
+        }
+
+        /*여기 까지 레이아웃*/
+
+        .card {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(27, 209, 130, 0.08), 0 1.5px 6px rgba(0, 0, 0, 0.04);
+            /* max-width를 1200px로 늘려서 더 와이드하게! */
+            max-width: 1600px;
+            margin: 0 auto 40px auto;
+            padding: 40px 40px 30px 40px;
+        }
+
+        .card-btn {
+            background-color: #1BD182;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: 500;
+            font-size: 1.2em;
+        }
+
+
+
+        /* textarea를 더 높게! */
+        .card textarea {
+            min-height: 220px;
+            /* 기본 높이 크게 */
+            resize: vertical;
+            /* 사용자가 세로로 더 늘릴 수 있음 */
+            font-size: 1.08em;
+        }
+
+        /* 제목, 정원, 게시글 라벨 */
+        .card label {
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: inline-block;
+        }
+
+        /* 인풋, 텍스트에어리어 공통 */
+        .card input[type="text"],
+        .card input[type="number"] {
+            width: 80%;
+            padding: 10px 12px;
+            margin-bottom: 18px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 7px;
+            font-size: 1em;
+            background: #f9fafb;
+            transition: border 0.2s;
+            box-sizing: border-box;
+        }
+        
+        .card textarea {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 18px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 7px;
+            font-size: 1em;
+            background: #f9fafb;
+            transition: border 0.2s;
+            box-sizing: border-box;
+        }
+    </style>
 </head>
+
 <body>
-    <h1>스터디 수정</h1>
-    <!-- app.py에서 스터디 내용을 받아옴 / form 이용해서 route 접근-->
-    <form action="/study/{{ study._id }}/edit" method="post">
-        <label>제목:</label><br>
-        <input type="text" name="title" value="{{ study.title }}" required><br><br>
+    <div class="page-container">
+        <nav class="navbar">
+            <a href="/main"><img src="{{ url_for('static', filename='image/junglelogo.png') }}" class="logo-nav"
+                    alt="정글 로고"></a>
+            <div class="nav-menu">
+                <a href="/shareDataBoardList">자료 공유</a>
+                <a href="/qnaBoard">우리들의 Q&A</a>
+                <a href="/goToStudy">스터디 하자</a>
+            </div>
+            <div class="user-actions">
+                <a href="/AccountEditPage" class="btn-mypage">회원정보수정</a>
+                <a href="#" onclick="logout()">로그아웃</a>
+            </div>
+        </nav>
 
-        <label>모집정원:</label><br>
-        <input type="number" name="capacity" value="{{ study.capacity }}" required><br><br>
+        <div class="main-container">
+            <div class="sidebar">
+                <div class="user-profile">
+                    <div class="icon"><i class="fas fa-user-circle"></i></div>
+                    <div class="username" id="profile-username"></div>
+                </div>
+                <nav class="side-nav">
+                    <a href="#" class="active">추천한 게시글</a>
+                    <a href="#">내가 쓴 글</a>
+                </nav>
+            </div>
+            <div class="main-content">
+                <h1>스터디 수정</h1>
 
-        <label>내용:</label><br>
-        <textarea name="post" rows="10" cols="50" required>{{ study.post }}</textarea><br><br>
+                <div class="card">
+                <!-- app.py에서 스터디 내용을 받아옴 / form 이용해서 route 접근-->
+                <form action="/study/{{ study._id }}/edit" method="post">
+                    <label>제목:</label><br>
+                    <input type="text" name="title" value="{{ study.title }}" required><br><br>
 
-        <button>수정 완료</button>
-    </form>
+                    <label>모집정원:</label><br>
+                    <input type="number" name="capacity" value="{{ study.capacity }}" style=" width:50px;" required min="2"><br><br>
 
-    <a href="{{ url_for('study_detail', study_id=study._id|string) }}">상세보기로 돌아가기</a>
+                    <label>내용:</label><br>
+                    <textarea name="post" rows="10" cols="50" required>{{ study.post }}</textarea><br><br>
+                
+
+                    <button class="card-btn">수정 완료</button>
+                </form>
+                </div>
+
+                <a href="{{ url_for('study_detail', study_id=study._id|string) }}">뒤로가기</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+
+    <script>
+        function logout() {
+            $.removeCookie('mytoken', { path: '/' });
+            alert('로그아웃 되었습니다.');
+            window.location.href = '/';
+        }
+
+        // 페이지 로딩 시, 내 정보를 가져와 사이드바에 표시
+        $(document).ready(function () {
+            // 이 로직은 토큰이 있는 페이지에서만 유효
+            if ($.cookie('mytoken')) {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/getMyInfo",
+                    success: function (response) {
+                        if (response.result === 'success') {
+                            $('#profile-username').text(response.user_info.username);
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+
+    {% block script %}{% endblock %}
 </body>
+
 </html>
