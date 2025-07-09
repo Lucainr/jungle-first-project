@@ -26,6 +26,7 @@ app = Flask(__name__)
 # JWT를 위한 비밀 키
 SECRET_KEY = 'JUNGLE'
 
+
 def get_user_id_from_token():
     token = request.cookies.get('mytoken')
     if token is None:
@@ -619,7 +620,7 @@ SECRET_KEY = 'JUNGLE'
 @app.route('/goToStudy')
 def main():
     #return render_template('register.html')
-    studies = list(db.studies.find({}))
+    studies = list(db.studies.find().sort([('date', -1), ('_id', -1)]))
     return render_template('letsStudyMain.html', studies=studies)
 
 @app.route('/study/<study_id>')
@@ -719,9 +720,10 @@ def submit_study():
                 'username': username
         })
 
+        studies= db.studies.find().sort([('date', -1), ('_id', -1)])
         #success = True
         flash('등록 완료!')
-        return redirect(url_for('main')) # 메인 페이지로 리다이렉트
+        return render_template("letsStudyMain.html", studies=studies)
 
         
         
@@ -730,8 +732,9 @@ def submit_study():
     else:
         #studies = list(db.studies.find({}, {'_id': False}))
         #return render_template('result.html', studies=studies)
+        studies= db.studies.find().sort([('date', -1), ('_id', -1)])
 
-        return render_template('register.html')
+        return render_template('register.html', studies=studies)
     
 
 @app.route('/study/delete', methods=['POST'])
@@ -806,6 +809,46 @@ def give_num(study_id):
         updated_study = db.studies.find_one({'_id': Obj_id})
 
         return render_template('studyDetail.html', study=updated_study, current_user_id=applicant_id, alert_new="신청되었습니다!")
+    
+@app.route('/study/<study_id>/cancel', methods=['POST'])
+def cancel_application(study_id):
+    # study_id는 URL 파라미터로 받았으니, form에서 id 안 받아도 됨
+    try:
+        Obj_id = ObjectId(study_id)
+    except:
+        return "유효하지 않은 ID입니다.", 400
+
+    study = db.studies.find_one({'_id': Obj_id})
+    if not study:
+        return "해당 ID가 존재하지 않습니다.", 404
+
+    # JWT에서 로그인한 유저 ID 꺼내기
+    token = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        current_user_id = payload.get('id')
+    except (jwt.ExpiredSignatureError, jwt.DecodeError, jwt.InvalidTokenError):
+        return "로그인이 필요합니다.", 401
+
+    # 신청자 리스트에서 current_user_id와 같은 신청자 제외
+    new_applicants = [app for app in study.get('applicants', []) if app.get('applied_id') != current_user_id]
+
+    # 인원 수 1 감소, 최소 0
+    new_number = max(study.get('number', 1) - 1, 0)
+
+    # DB 업데이트
+    db.studies.update_one(
+        {'_id': Obj_id},
+        {
+            '$set': {
+                'applicants': new_applicants,
+                'number': new_number
+            }
+        }
+    )
+
+    updated_study = db.studies.find_one({'_id': Obj_id})
+    return render_template('studyDetail.html', study=updated_study, current_user_id=current_user_id, alert_cancel="신청이 취소되었습니다.")
     
 # '/create' URL에 대한 GET 요청을 처리
 # 이 함수는 'createQnaBoard.html' 템플릿을 렌더링하여 사용자에게 보여줌

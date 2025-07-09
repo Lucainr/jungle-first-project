@@ -220,25 +220,41 @@
 
 
 
-                <!-- <div style="display: flex; gap: 10px; align-items: center; "> -->
-                {%if current_user_id != study.user_id %}
+
+                <!-- applicants안에 있는 applied_id 와 user_id가 동일한지 true/false 로 도출하고 -->
+                {% if current_user_id != study.user_id %}
+                {% set ns = namespace(is_applied=false) %}
+                {% if study.applicants %}
+                {% for applicant in study.applicants %}
+                {% if applicant.applied_id == current_user_id %}
+                {% set ns.is_applied = true %}
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+                <!-- applied가 된 사람이라면 취소를 -->
+                {% if ns.is_applied %}
+                <!-- 신청 취소 버튼 -->
+                <div style="display: flex; justify-content: flex-end; gap:10px; margin-right: 23px;">
+                    <form action="{{ url_for('cancel_application', study_id=study._id|string) }}" method="post"
+                        >
+                        <input type="hidden" name="user_id" value="{{ current_user_id }}">
+                        <button class="card-btn" style="background-color: red;">신청 취소</button>
+                    </form>
+                    <button class="card-btn" onclick="location.href='/goToStudy'">목록으로 돌아가기</button>
+                </div>
+                <!-- 아니라면 신청하기 버튼을 누른다 -->
+                {% else %}
+                <!-- 신청하기 버튼 -->
                 <div style="display: flex; justify-content: flex-end; gap:10px; margin-right: 23px;">
                     <form action="{{ url_for('give_num', study_id=study._id|string) }}" method="post">
                         <input type="hidden" name="_id" value="{{ study._id }}">
                         <input type="hidden" name="capacity" value="{{ study.capacity }}">
-                        
-
                         <button class="card-btn">신청하기</button>
-
-
                     </form>
                     <button class="card-btn" onclick="location.href='/goToStudy'">목록으로 돌아가기</button>
-                    
                 </div>
                 {% endif %}
-                        
-
-
+                {% endif %}
 
                 <!-- 조건문으로 자신일때만 수정과 삭제 버튼이 나오게 하기 -->
                 {%if current_user_id == study.user_id %}
@@ -247,7 +263,7 @@
 
                     <form action="/study/delete" method="post" style="display: inline;">
                         <input type="hidden" name="_id" value="{{ study._id }}">
-                        <button class="card-btn" >삭제</button>
+                        <button class="card-btn">삭제</button>
                     </form>
 
                     <button class="card-btn" onclick="location.href='/goToStudy'">목록으로 돌아가기</button>
@@ -267,6 +283,7 @@
                         <p><strong>{{ applicant.applied_username }}</strong></p>
                     </div>
                     {% endfor %}
+
                     <!-- 없으면 신청자가 없습니다  -->
                     {% else %}
                     <p>아직 신청자가 없습니다.</p>
@@ -288,6 +305,13 @@
                 {% if alert_new %}
                 <script>
                     alert("{{ alert_new }}");
+                </script>
+                {% endif %}
+
+
+                {% if alert_cancel %}
+                <script>
+                    alert("{{ alert_cancel }}");
                 </script>
                 {% endif %}
 
