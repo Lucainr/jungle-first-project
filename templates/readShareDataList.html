@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="kr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>자료 공유</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/css/readShareDataList.css">
+    <link rel="stylesheet" href="/static/css/public.css">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+        integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+
+</head>
+
+<body>
+    <div class="page-container">
+        <nav class="navbar">
+            <a href="/main"><img src="{{ url_for('static', filename='image/junglelogo.png') }}" class="logo-nav"
+                    alt="정글 로고"></a>
+            <div class="nav-menu">
+                <a href="/shareDataBoardList">자료 공유</a>
+                <a href="/qnaBoardList">우리들의 Q&A</a>
+                <a href="/goToStudy">스터디 하자</a>
+            </div>
+            <div class="user-actions">
+                <a href="/AccountEditPage" class="btn-mypage">회원정보수정</a>
+                <a href="#" onclick="logout()">로그아웃</a>
+            </div>
+        </nav>
+
+        <div class="main-container">
+            <div class="sidebar">
+                <div class="user-profile">
+                    <div class="icon"><i class="fas fa-user-circle"></i></div>
+                    <div class="username" id="profile-username"></div>
+                </div>
+                <nav class="side-nav">
+                    <a href="/recommendPost">추천한 게시글</a>
+                    <a href="/writtenPost">내가 쓴 글</a>
+                </nav>
+            </div>
+
+            <div class="main-content">
+                <div class="container">
+                    <div class="col-md-12">
+                        <div class="flex">
+                            <h1>자료 공유</h2>
+                            <div class="write-btn">
+                                <button onclick="createShareData();">작성하기</button>
+                            </div>
+                        </div>
+                        <!-- 서버에서 전달받은 shareDatas를 Jinja2 for 루프로 순회하며 테이블 행을 생성 -->
+                        {% for item in shareDatas %}
+                        <br>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 id="shareTitle">
+                                    <a href="{{ url_for('shareDataBoard', shareId=item._id) }}">{{ item.title }}</a>
+                                </h2>
+                                <small id="date">{{ item.formatted_date }}</small>&nbsp;&nbsp;|&nbsp;&nbsp;<small id="likes">♥{{ item.likes }}</small>
+                            </div>
+                            <h5 id="writer" class="mb-0">{{ item.writerUsername }}</h5>
+                        </div>
+                        <br>
+                        <hr>
+                        {% endfor %}
+
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center" id="pagination">
+                                <!-- 서버에서 전달받은 페이지 정보로 Jinja2 for 루프를 순회하며 페이지네이션 버튼을 생성-->
+                                {% for page_num in range(1, total_pages + 1) %}
+                                {% if page_num == page %}
+                                <!-- 현재 페이지일 경우 active 클래스를 추가하여 강조 표시 -->
+                                <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                                {% else %}
+                                <!-- 다른 페이지일 경우 해당 페이지로 이동하는 링크를 생성 -->
+                                <li class="page-item"><a class="page-link"
+                                        href="{{ url_for('shareDataBoardList', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                                {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+    <script>
+        function logout() {
+            $.removeCookie('mytoken', { path: '/' });
+            alert('로그아웃 되었습니다.');
+            window.location.href = '/';
+        }
+
+        // 페이지 로딩 시, 내 정보를 가져와 사이드바에 표시
+        $(document).ready(function () {
+            // 이 로직은 토큰이 있는 페이지에서만 유효
+            if ($.cookie('mytoken')) {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/getMyInfo",
+                    success: function (response) {
+                        if (response.result === 'success') {
+                            $('#profile-username').text(response.user_info.username);
+                        }
+                    }
+                });
+            }
+        });
+
+        // '글 작성' 버튼 클릭 시 호출될 함수
+        function createShareData() {
+            // 새로운 게시글을 작성하는 페이지('/createShareData')로 이동
+            window.location.href = "/createShareData";
+        }
+    </script>
+</body>
+
+</html>

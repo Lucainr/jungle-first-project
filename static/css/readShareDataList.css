@@ -1,0 +1,56 @@
+/* 글 작성 버튼 */
+.write-btn {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+.write-btn button {
+    background-color: #1BD182;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.write-btn button:hover {
+    background-color: #1BD182;
+}
+
+/* 게시글 제목 input */
+#shareTitle {
+    font-size: 1.5rem;
+    font-weight: bold;
+    border: none;
+    background-color: transparent;
+}
+
+#shareTitle a {
+    color: black;
+    text-decoration: none;
+}
+
+/* 날짜, 좋아요 수 */
+#date,
+#likes {
+    border: none;
+    background-color: transparent;
+    font-size: 0.9rem;
+    color: #999;
+}
+
+/* 페이지네이션 */
+.pagination .page-item.active .page-link {
+    background-color: #1BD182;
+    border-color: #1BD182;
+}
+
+.pagination .page-link {
+    color: #1BD182;
+}
+
+.pagination .page-link:hover {
+    background-color: #1BD182;
+    color: white;
+}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="kr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>자료 공유 게시글 작성</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/css/createShareData.css">
+    <link rel="stylesheet" href="/static/css/public.css">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+        integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="page-container">
+        <nav class="navbar">
+            <a href="/main"><img src="{{ url_for('static', filename='image/junglelogo.png') }}" class="logo-nav"
+                    alt="정글 로고"></a>
+            <div class="nav-menu">
+                <a href="/shareDataBoard">자료 공유</a>
+                <a href="#">우리들의 Q&A</a>
+                <a href="/goToStudy">스터디 하자</a>
+            </div>
+            <div class="user-actions">
+                <a href="/AccountEditPage" class="btn-mypage">회원정보수정</a>
+                <a href="#" onclick="logout()">로그아웃</a>
+            </div>
+        </nav>
+
+        <div class="main-container">
+            <div class="sidebar">
+                <div class="user-profile">
+                    <div class="icon"><i class="fas fa-user-circle"></i></div>
+                    <div class="username" id="profile-username"></div>
+                </div>
+                <nav class="side-nav">
+                    <a href="#">추천한 게시글</a>
+                    <a href="#">내가 쓴 글</a>
+                </nav>
+            </div>
+
+            <div class="main-content">
+                <div class="container">
+                    <!-- 글 작성 부분 -->
+                    <div class="col-md-12 d-flex justify-content-center align-items-center">
+                        <div class="w-75">
+                            <div class="form-title">자료 공유</div>
+                            <br>
+                            <form class="shareForm">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" placeholder="공유할 자료의 제목을 입력해주세요."
+                                        id="shareTitle">
+                                </div>
+                                <div class="mb-3">
+                                    <textarea class="form-control" rows="10" placeholder="내용을 입력해주세요.."
+                                        id="shareContent"></textarea>
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button type="button" class="btn btn-white mr-2" id="inventoryBtn" onclick="shareDataList();">목록</button>
+                                    <button type="submit" class="btn" id="writeBtn">작성하기</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+
+    <script>
+        function logout() {
+            $.removeCookie('mytoken', { path: '/' });
+            alert('로그아웃 되었습니다.');
+            window.location.href = '/';
+        }
+
+        // 페이지 로딩 시, 내 정보를 가져와 사이드바에 표시
+        $(document).ready(function () {
+            // 이 로직은 토큰이 있는 페이지에서만 유효
+            if ($.cookie('mytoken')) {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/getMyInfo",
+                    success: function (response) {
+                        if (response.result === 'success') {
+                            $('#profile-username').text(response.user_info.username);
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+    <script>
+        let currentUserId = "";  // 전역 변수로 선언
+
+        // 문서(document)가 완전히 로드되었을 때 실행될 함수를 설정
+        // jQuery의 $(document).ready()는 HTML이 모두 로드되고 DOM 트리가 완성되었을 때 코드를 실행하도록 보장
+        $(document).ready(function () {
+            getUserInfo();
+
+            // 클래스가 'shareForm'인 폼(<form>)에 'submit' 이벤트 리스너를 추가
+            // 사용자가 폼을 제출하려고 할 때(예: '작성하기' 버튼 클릭) 이 함수가 실행됨
+            $('.shareForm').on('submit', function (e) {
+                // e.preventDefault()는 폼의 기본 제출(submit) 동작을 막고
+                // 기본 동작은 페이지를 새로고침하는 것인데, 우리는 Ajax를 통해 비동기적으로 데이터를 처리할 것이므로 이를 방지
+                e.preventDefault(); // 폼 기본 제출 동작 방지
+                // 폼 데이터 처리를 위해 createShareDataBoard 함수를 호출
+                createShareDataBoard();
+            });
+        })
+
+        function getUserInfo() {
+            $.ajax({
+                type: "GET",
+                url: "/getUserInfo",
+                success: function (response) {
+                    if (response.result === "success") {
+                        currentUserId = response.id;  // id를 전역 변수에 저장
+                    } else {
+                        alert("로그인 정보가 없습니다. 로그인 후 이용해주세요.");
+                        window.location.href = "/";
+                    }
+                },
+                error: function () {
+                    alert("유저 정보를 불러오는데 실패했습니다.");
+                }
+            });
+        }
+
+        // 게시글 데이터를 생성하고 서버로 전송하는 함수
+        function createShareDataBoard() {
+            // 유저가 입력한 제목, 내용, 작성자 정보를 jQuery를 사용해 가져옴
+            let title = $("#shareTitle").val();
+            let content = $("#shareContent").val();
+            let date = Date.now();
+            // 추후 로그인 기능이 구현되면 동적으로 변경
+            let writer = currentUserId;
+
+            if (title.length == 0 || content.length == 0) {
+                alert("공백인 상태의 글을 업로드 할 수 없습니다.\n제대로 입력한 후 다시 업로드해주세요.")
+            } else {
+                // jQuery의 Ajax 함수를 사용하여 서버에 비동기적으로 HTTP 요청
+                $.ajax({
+                    type: "POST", // 요청 방식을 POST로 설정합니다.
+                    // 서버로 전송할 데이터를 객체 형태로 지정
+                    // Flask 서버의 request.form['key']에서 'key'에 해당하는 부분
+                    data: { shareTitle: title, shareContent: content, date: date, writer: writer },
+                    // 요청이 성공적으로 완료되었을 때 실행될 콜백 함수
+                    success: function (response) {
+                        if (response["result"] == "success") {
+                            alert("업로드 성공!");
+                            window.location.href = "/shareDataBoardList";
+                        } else {
+                            alert("업로드에 실패하였습니다. 해당 현상이 지속될 경우 고객센터로 문의해주세요.")
+                        }
+                    }
+                })
+            }
+        }
+
+        // '목록' 버튼 클릭 시 호출될 함수
+        function shareDataList() {
+            // 게시판 목록 페이지로 이동
+            window.location.href = "/shareDataBoardList";
+        }
+    </script>
+</body>
+
+</html>

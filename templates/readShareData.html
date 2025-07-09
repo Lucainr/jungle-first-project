@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>자료 공유</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/css/readShareData.css">
+    <link rel="stylesheet" href="/static/css/public.css">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+        integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+
+</head>
+
+<body>
+    <div class="page-container">
+        <nav class="navbar">
+            <a href="/main"><img src="{{ url_for('static', filename='image/junglelogo.png') }}" class="logo-nav"
+                    alt="정글 로고"></a>
+            <div class="nav-menu">
+                <a href="/shareDataBoardList">자료 공유</a>
+                <a href="/qnaBoardList">우리들의 Q&A</a>
+                <a href="/goToStudy">스터디 하자</a>
+            </div>
+            <div class="user-actions">
+                <a href="/AccountEditPage" class="btn-mypage">회원정보수정</a>
+                <a href="#" onclick="logout()">로그아웃</a>
+            </div>
+        </nav>
+
+        <div class="main-container">
+            <div class="sidebar">
+                <div class="user-profile">
+                    <div class="icon"><i class="fas fa-user-circle"></i></div>
+                    <div class="username" id="profile-username"></div>
+                </div>
+                <nav class="side-nav">
+                    <a href="/recommendPost">추천한 게시글</a>
+                    <a href="/writtenPost">내가 쓴 글</a>
+                </nav>
+            </div>
+
+            <div class="main-content">
+                <div class="container">
+                    <div class="col-md-12 d-flex justify-content-center align-items-center">
+                        <div class="w-75">
+                            <div class="form-title">자료 공유</div>
+                            <br>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h2 id="shareTitle"></h2>
+                                        <small id="date"></small>&nbsp;&nbsp;|&nbsp;&nbsp;<small id="likes"></small>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <h5 id="writer" class="mb-0"></h5>&nbsp;&nbsp;
+                                        <button class="btn btn-success" id="likeBtn" onclick="toggleLike();">♡</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <textarea class="form-control" rows="10" id="shareContent" readonly></textarea>
+                            </div>
+                            <div class="mb-3 d-flex justify-content-end gap-2" id="btnGroup">
+                                <button class="btn btn-white" id="editBtn" style="display: none;" onclick="editShareData();">수정</button>
+                                <button class="btn btn-white" id="deleteBtn" style="display: none;" onclick="deleteShareData();">삭제</button>
+                                <button class="btn btn-success" id="inventoryBtn" onclick='shareDataList();'>목록</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 댓글 섹션 -->
+                <div class="container mt-5">
+                    <div class="col-md-12 d-flex justify-content-center align-items-center">
+                        <div class="w-75">
+                            <h4>댓글</h4>
+                            <div class="mb-3">
+                                <textarea class="form-control" id="commentContent" rows="3"
+                                    placeholder="댓글을 입력하세요."></textarea>
+                            </div>
+                            <div class="mb-3 text-right">
+                                <button class="btn btn-primary" id="commentBtn" onclick="submitComment();">댓글
+                                    등록</button>
+                            </div>
+                            <div id="commentsList">
+                                <!-- 댓글 목록이 여기에 동적으로 로드 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+
+    <script>
+        function logout() {
+            $.removeCookie('mytoken', { path: '/' });
+            alert('로그아웃 되었습니다.');
+            window.location.href = '/';
+        }
+
+        // 페이지 로딩 시, 내 정보를 가져와 사이드바에 표시
+        $(document).ready(function () {
+            // 이 로직은 토큰이 있는 페이지에서만 유효
+            if ($.cookie('mytoken')) {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/getMyInfo",
+                    success: function (response) {
+                        if (response.result === 'success') {
+                            $('#profile-username').text(response.user_info.username);
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+    <script>
+        // 서버(Flask)에서 Jinja2 템플릿을 통해 전달받은 게시글의 고유 ID를 JavaScript 변수에 저장
+        // 이 변수는 페이지 내 여러 함수에서 공통적으로 사용
+        let shareId = "{{ shareId }}";
+
+        // 문서(document)가 완전히 로드되었을 때 실행될 함수를 설정
+        $(document).ready(function () {
+            // 페이지가 로드되자마자 Ajax 요청을 보내 특정 게시글의 상세 데이터를 가져옴
+            contentLoad();
+        });
+
+        function contentLoad() {
+            $.ajax({
+                type: "GET", // HTTP 요청 방식을 GET으로 설정
+                // 요청을 보낼 URL을 지정함. 백틱(`)을 사용한 템플릿 리터럴로 shareId 변수를 URL에 포함
+                url: `/detail/shareDataBoard/${shareId}`,
+                // 요청이 성공적으로 완료되었을 때 실행될 콜백 함수
+                success: function (response) {
+                    // 서버로부터 받은 응답(response)의 result 값이 "success"인지 확인
+                    if (response.result === "success") {
+                        // 성공 시, 응답으로 받은 데이터를 각 input 필드에 채워넣는다
+                        $("#shareTitle").text(response.title);
+                        $("#shareContent").val(response.content);
+                        $("#writer").text(response.writerUsername);
+                        // 서버에서 받은 타임스탬프(response.date)를 한국 시간 형식의 문자열로 변환하여 표시
+                        $("#date").text(new Date(parseInt(response.date)).toLocaleString("ko-KR"));
+                        $("#likes").text(`♥ ${response.likes}`);
+
+                        // 게시글 상세 정보를 불러온 후, 좋아요 상태를 확인
+                        checkLikeStatus();
+
+                        // 수정/삭제 버튼 가시성 제어
+                        toggleEditDeleteButtons(response.writer, response.current_user_id);
+
+                        // 댓글 로드                                                                                                                           │
+                        loadComments();
+                    } else {
+                        // 데이터를 불러오지 못했을 경우 사용자에게 알림을 표시
+                        alert("데이터를 불러오지 못했습니다.");
+                    }
+                }
+            });
+        }
+        // 댓글 로드 함수                                                                                                                                      
+        function loadComments() {
+            $("#commentsList").empty(); // 기존 댓글 지우기                                                                                                    
+            $.ajax({
+                type: "GET",
+                url: `/comments/${shareId}`,
+                success: function (response) {
+                    if (response.result === "success") {
+                        let comments = response.comments;
+                        if (comments.length > 0) {
+                            comments.forEach(comment => {
+                                let temp_html = `                                                                                                              
+                                <div class="card mt-2">                                                                                                   
+                                    <div class="card-body">                                                                                                
+                                        <h5 class="card-title">${comment.username} <small class="text-muted">${comment.timestamp}</small></h5>             
+                                        <p class="card-text">${comment.comment_content}</p>                                                                
+                                    </div>                                                                                                                 
+                                </div>                                                                                                                     
+                            `;
+                                $("#commentsList").append(temp_html);
+                            });
+                        } else {
+                            $("#commentsList").append("<p class=\"text-muted\">아직 댓글이 없습니다.</p>");
+                        }
+                    } else {
+                        console.error("댓글을 불러오지 못했습니다:", response.msg);
+                    }
+                },
+                error: function () {
+                    console.error("서버 오류 발생: 댓글 로드");
+                }
+            });
+        }
+
+        // 댓글 등록 함수                                                                                                                                      
+        function submitComment() {
+            let commentContent = $("#commentContent").val();
+
+            if (commentContent.trim() === "") {
+                alert("댓글 내용을 입력해주세요.");
+                return;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: `/comments/add`,
+                data: {
+                    share_id: shareId,
+                    comment_content: commentContent
+                },
+                success: function (response) {
+                    if (response.result === "success") {
+                        $("#commentContent").val(""); // 댓글 입력창 비우기                                                                                    
+                        loadComments(); // 댓글 목록 새로고침                                                                                                  
+                    } else {
+                        alert(response.msg); // 로그인 필요 등의 메시지 표시                                                                                   
+                    }
+                },
+                error: function () {
+                    alert("서버 오류 발생: 댓글 등록");
+                }
+
+            })
+        }
+
+        // 수정/삭제 버튼 가시성 제어 함수
+        function toggleEditDeleteButtons(postWriterId, currentUserId) {
+            const editButton = $("#editBtn");
+            const deleteButton = $("#deleteBtn");
+
+            if (postWriterId === currentUserId && currentUserId !== "알 수 없음") {
+                editButton.show();
+                deleteButton.show();
+            } else {
+                editButton.hide();
+                deleteButton.hide();
+            }
+        }
+
+        // 좋아요 상태를 확인하는 함수
+        function checkLikeStatus() {
+            $.ajax({
+                type: "GET",
+                url: `/getLikeStatus/${shareId}`,
+                success: function (response) {
+                    if (response.result === "success") {
+                        if (response.liked) {
+                            $("#likeBtn").text("♥"); // 좋아요 취소 버튼
+                        } else {
+                            $("#likeBtn").text("♡"); // 좋아요 버튼
+                        }
+                        $("#likes").val(response.likes); // 좋아요 수 업데이트
+                    } else {
+                        console.error("좋아요 상태를 불러오지 못했습니다:", response.msg);
+                        // 로그인 필요 등의 메시지를 사용자에게 보여줄 수 있음
+                    }
+                },
+                error: function () {
+                    console.error("서버 오류 발생: 좋아요 상태 확인");
+                }
+            });
+        }
+
+        // '수정' 버튼 클릭 시 호출될 함수
+        // 전역(window) 객체에 함수를 할당하여 HTML의 onclick 속성에서 직접 호출할 수 있도록 함
+        window.editShareData = function () {
+            // 현재 게시글을 수정하는 페이지로 이동합니다.
+            window.location.href = "/editShareData/" + shareId;
+        }
+
+        // '삭제' 버튼 클릭 시 호출될 함수
+        window.deleteShareData = function () {
+            // Ajax를 통해 서버에 게시글 삭제를 요청
+            $.ajax({
+                type: "POST", // HTTP 요청 방식을 POST로 설정
+                url: "/deleteShareData/" + shareId, // 삭제를 요청할 URL
+                // 요청이 성공적으로 완료되었을 때 실행될 콜백 함수
+                success: function (response) {
+                    if (response.result === "success") {
+                        alert("게시글이 삭제되었습니다.");
+                        // 삭제 성공 시, 게시판 목록 페이지로 이동
+                        window.location.href = "/shareDataBoardList";
+                    } else {
+                        alert("삭제 실패!");
+                    }
+                },
+                error: function () {
+                    alert("서버 오류 발생");
+                }
+            });
+        }
+
+        // '목록' 버튼 클릭 시 호출될 함수
+        function shareDataList() {
+            // 게시판 목록 페이지로 이동
+            window.location.href = "/shareDataBoardList";
+        }
+
+        // '좋아요' 버튼 클릭 시 호출될 함수
+        function toggleLike() {
+            // 좋아요를 추가/취소할 게시글의 ID
+            let shareId = "{{ shareId }}";
+
+            // Ajax를 통해 서버에 '좋아요' 토글을 요청
+            $.ajax({
+                type: "POST", // HTTP 요청 방식을 POST로 설정
+                url: `/toggleLike/${shareId}`, // 좋아요 토글을 요청할 URL
+                success: function (response) {
+                    if (response.result === "success") {
+                        // 성공 시, 화면의 '좋아요' 숫자를 업데이트
+                        $("#likes").val(response.likes);
+                        // 좋아요 상태에 따라 버튼 텍스트 변경
+                        if (response.liked) {
+                            $("#likeButton").text("♥");
+                        } else {
+                            $("#likeButton").text("♡");
+                        }
+                        checkLikeStatus();
+                        contentLoad();
+                    } else {
+                        alert(response.msg); // 서버에서 받은 메시지 표시 (예: 로그인 필요)
+                    }
+                },
+                // 요청 처리 중 오류가 발생했을 때 실행될 콜백 함수
+                error: function () {
+                    alert("서버 오류 발생");
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

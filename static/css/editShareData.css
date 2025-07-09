@@ -1,0 +1,40 @@
+a{
+    text-decoration-line: none;
+}
+
+#shareContent{
+    resize: none;
+    height: 700px;
+}
+
+.form-title{
+    font-size : 3.0rem;
+}
+
+#editBtn{
+    background-color: #1BD182;
+    color: white;
+}
+
+.btn-white {
+    background-color: #f1f1f1;
+    border: none;
+    color: #333;
+    border-radius: 6px;
+}
+
+.btn-white:hover {
+    background-color: #e0e0e0;
+}
+
+/* 제목 */
+.form-title {
+    font-size: 2.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+#editBtn:hover {
+    background-color: #17b170;
+    border-color: #17b170;
+}
