@@ -5,7 +5,7 @@ from bson import ObjectId
 
 client = MongoClient('mongodb://test:test@15.164.170.54', 27017)  # mongoDB는 27017 포트로 돌아갑니다.
 #client = MongoClient('localhost', 27017) 
-db = client.dbStudy  # 'dbjungle'라는 이름의 db를 만들거나 사용합니다.
+db = client.dbjungle  # 'dbjungle'라는 이름의 db를 만들거나 사용합니다.
 
 app = Flask(__name__)
 
