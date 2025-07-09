@@ -9,7 +9,7 @@
         body, html { margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; background-color: #f8f9fa; height: 100%; box-sizing: border-box; }
         a { text-decoration: none; color: inherit; }
 
-        /* [수정 3] 상단 네비게이션 바 스타일 */
+        /* 상단 네비게이션 바 스타일 */
         .navbar {
             display: flex;
             justify-content: space-between; /* 양쪽 끝으로 요소 정렬 */
@@ -18,7 +18,7 @@
             background-color: white;
             width: 100%;
             box-sizing: border-box;
-            /* [수정 1] 상단 띠를 없애고, navbar의 아래 테두리를 초록색으로 변경 */
+            /* 상단 띠를 없애고, navbar의 아래 테두리를 초록색으로 변경 */
             border-bottom: 3px solid #1BD182;
         }
         .navbar .logo-nav { height: 200px; }
@@ -33,7 +33,7 @@
         }
         .navbar .user-actions { display: flex; align-items: center; gap: 15px; font-size: 0.9em; }
         .navbar .user-actions .btn-mypage { background-color: #1BD182; color: white; padding: 8px 15px; border-radius: 5px; font-weight: 500; }
-        /* [수정 2] 전체 레이아웃 컨테이너 */
+        /* 전체 레이아웃 컨테이너 */
         .main-container {
             display: flex;
             height: 100%; /* body 높이(100%)를 그대로 사용 */
@@ -78,10 +78,10 @@
             background-color: white;
         }
         .user-profile { margin-top: 80px; text-align: center; }
-        /* [수정 2] 사이드바 프로필 아이콘 크기 조절 */
+        /* 사이드바 프로필 아이콘 크기 조절 */
         .user-profile .icon { font-size: 120px; margin-bottom: 20px; }
         .user-profile .username { font-size: 1.3em; font-weight: 700; }
-        /* --- [수정] 메인 컨텐츠 스타일 --- */
+        /* 메인 컨텐츠 스타일 */
         .main-content {
             flex: 1;
             padding: 50px 80px;
@@ -89,7 +89,7 @@
         }
         .main-content h1 { font-size: 1.8em; margin: 0 0 40px 0; border-bottom: 2px solid #343a40; padding-bottom: 20px;}
         
-        /* --- [수정] 폼 스타일 --- */
+        /* 폼 스타일 */
         .edit-form label { display: block; margin: 20px 0 8px 0; font-weight: 700; font-size: 0.9em; color: #495057;}
         .edit-form input[type="text"],
         .edit-form input[type="password"] {
@@ -100,6 +100,7 @@
             box-sizing: border-box;
             font-size: 1em;
         }
+        /* 입력창 스타일 */
         .input-group { display: flex; }
         .input-group input { flex-grow: 1; }
         .input-group button { 
@@ -107,6 +108,7 @@
             background-color: #868e96; color: white; border-radius: 5px; 
             cursor: pointer; white-space: nowrap; font-weight: 500;
         }
+        /* 중복확인 버튼 호버 효과 */
         .btn-save { 
             width: 100%; padding: 15px; background-color: #343a40; 
             color: white; border: none; border-radius: 5px; font-size: 1.1em; 
@@ -185,7 +187,7 @@
             });
         });
         
-        // [수정] 이메일 중복 확인 함수 추가
+        // 이메일 중복 확인 함수 추가
         function checkEmail() {
             let email = $('#email').val();
             $.ajax({
@@ -226,7 +228,7 @@
             $.ajax({
                 type: "POST", url: "/api/update-my-info",
                 data: {
-                    password_give: password, // 비어있으면 서버에서 처리 안 함
+                    password_give: password,
                     username_give: username,
                     email_give: email
                 },

@@ -261,7 +261,6 @@ def AccountEditPage():
         # 토큰이 없거나 유효하지 않으면 로그인 페이지로 리다이렉트
         return redirect(url_for("home"))
 
-# --- API 부분에 아래 3개 추가 ---
 
 # 내 정보 가져오기 API
 @app.route('/api/getMyInfo', methods=['GET'])
@@ -278,7 +277,7 @@ def getMyInfo():
     except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
         return jsonify({'result': 'fail', 'msg': '로그인이 필요합니다.'})
 
-# [수정] updateMyInfo API (기존 함수를 이걸로 교체)
+# 회원 정보 수정 API
 @app.route('/api/update-my-info', methods=['POST'])
 def updateMyInfo():
     token_receive = request.cookies.get('mytoken')
