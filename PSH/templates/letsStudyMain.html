@@ -39,7 +39,7 @@
     <div class="cards-container">
         <!-- studies db에서 study들 생성해서 card 만들기 -->
         {% for study in studies %}
-        <div class="card" id="{{ study._id }}" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card" id="{{ study._id }}" style="display: flex; height: 70px; justify-content: space-between; align-items: center;">
             <a href="{{ url_for('study_detail', study_id=study._id|string)}}" style="text-decoration:none; color:inherit;"> {{ study.title }}</a>            
             <!-- 오른쪽: 모집정원 + 날짜 + 작성자 + ID-->
             <div style="display: flex; gap: 10px; align-items: flex-end;">
