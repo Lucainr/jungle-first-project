@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>자료 공유</title>
+    <title>우리들의 Q&A</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -49,7 +49,7 @@
                 <div class="container">
                     <div class="col-md-12 d-flex justify-content-center align-items-center">
                         <div class="w-75">
-                            <div class="form-title">자료 공유</div>
+                            <div class="form-title">우리들의 Q&A</div>
                             <br>
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -139,7 +139,7 @@
             $.ajax({
                 type: "GET", // HTTP 요청 방식을 GET으로 설정
                 // 요청을 보낼 URL을 지정함. 백틱(`)을 사용한 템플릿 리터럴로 shareId 변수를 URL에 포함
-                url: `/detail/shareDataBoard/${shareId}`,
+                url: `/detail/qnaBoard/${shareId}`,
                 // 요청이 성공적으로 완료되었을 때 실행될 콜백 함수
                 success: function (response) {
                     // 서버로부터 받은 응답(response)의 result 값이 "success"인지 확인
@@ -272,7 +272,7 @@
 
         // '수정' 버튼 클릭 시 호출될 함수
         // 전역(window) 객체에 함수를 할당하여 HTML의 onclick 속성에서 직접 호출할 수 있도록 함
-        window.editQnaBoard = function () {
+        window.editShareData = function () {
             // 현재 게시글을 수정하는 페이지로 이동합니다.
             window.location.href = "/editQnaBoard/" + shareId;
         }
@@ -302,7 +302,7 @@
         // '목록' 버튼 클릭 시 호출될 함수
         function shareDataList() {
             // 게시판 목록 페이지로 이동
-            window.location.href = "/shareDataBoardList";
+            window.location.href = "/qnaBoardList";
         }
 
         // '좋아요' 버튼 클릭 시 호출될 함수

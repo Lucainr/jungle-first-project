@@ -34,7 +34,7 @@ def get_user_id_from_token():
         return payload['id']
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
-     
+
 ## 라우팅
 # 기본 URL 접속 시 Login 페이지
 @app.route('/')
@@ -218,6 +218,22 @@ def ResetPassword():
         
     except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
         return jsonify({'result': 'fail', 'msg': '인증 시간이 만료되었습니다. 다시 시도해주세요.'})
+    
+# 내 정보 가져오기 API
+@app.route('/api/getMyInfo', methods=['GET'])
+def getMyInfo():
+    token_receive = request.cookies.get('mytoken')
+    try:
+        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+        user_id = payload['id']
+        
+        # DB에서 해당 ID의 사용자 정보를 찾음 (비밀번호는 제외)
+        user_info = db.users.find_one({'id': user_id}, {'_id': 0, 'password': 0})
+        
+        return jsonify({'result': 'success', 'user_info': user_info})
+    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
+        return jsonify({'result': 'fail', 'msg': '로그인이 필요합니다.'})
+
 
 @app.route('/getUserInfo')
 def getUserInfo():
@@ -276,7 +292,7 @@ def addShareData():
 # 이 페이지는 모든 게시글 목록을 보여주는 역할
 @app.route('/shareDataBoardList')
 def shareDataBoardList():
-   # 클라이언트로부터 'page' 파라미터를 받아옵니다. 없으면 기본값은 1, 타입은 정수
+   # 클라이언트로부터 'page' 파라미터를 받아옴 없으면 기본값은 1, 타입은 정수
    page = request.args.get('page', 1, type=int)
 
    # 한 페이지에 보여줄 게시글의 수를 10으로 설정
@@ -304,10 +320,55 @@ def shareDataBoardList():
       else:
          item['writerUsername'] = "알 수 없음"  # 만약 없으면 기본값
 
-   return render_template('readShareDataList.html', shareDatas=paginated_data, total_pages=total_pages)
+      # 날짜 형식 변환 (오류 처리 강화)
+      try:
+          date_timestamp = item.get('date')
+          # JavaScript의 Date.now()는 밀리초 단위이므로 1000으로 나누어 초 단위로 변환
+          dt_object = datetime.datetime.fromtimestamp(int(date_timestamp) / 1000)
+          item['formatted_date'] = dt_object.strftime('%Y-%m-%d %H:%M')
+      except (ValueError, TypeError):
+          # 날짜 데이터가 없거나, 비어있거나, 잘못된 형식일 경우
+          item['formatted_date'] = '날짜 없음'
+
+   return render_template('readShareDataList.html', shareDatas=paginated_data, total_pages=total_pages, page=page)
 
 # MongoDB의 ObjectId를 다루기 위해 bson 라이브러리에서 ObjectId를 가져옴
 from bson import ObjectId
+
+# 댓글 추가
+@app.route('/comments/add', methods=['POST'])
+def add_comment():
+    user_id = get_user_id_from_token()
+    if user_id is None:
+        return jsonify({'result': 'fail', 'msg': '로그인이 필요합니다.'})
+
+    share_id = request.form.get('share_id')
+    comment_content = request.form.get('comment_content')
+
+    if not share_id or not comment_content:
+        return jsonify({'result': 'fail', 'msg': '게시글 ID 또는 댓글 내용이 누락되었습니다.'})
+
+    user_data = db.users.find_one({'id': user_id})
+    username = user_data['username'] if user_data and 'username' in user_data else "알 수 없음"
+
+    comment = {
+        'shareId': share_id,
+        'user_id': user_id,
+        'username': username,
+        'comment_content': comment_content,
+        'timestamp': datetime.datetime.now()
+    }
+    db.comments.insert_one(comment)
+    return jsonify({'result': 'success'})
+
+# 댓글 조회
+@app.route('/comments/<shareId>', methods=['GET'])
+def get_comments(shareId):
+    comments = list(db.comments.find({'shareId': shareId}).sort('timestamp', 1)) # 오래된 순서대로 정렬
+    for comment in comments:
+        comment['_id'] = str(comment['_id'])
+        comment['timestamp'] = comment['timestamp'].strftime('%Y-%m-%d %H:%M:%S') # 시간 형식 변경
+    return jsonify({'result': 'success', 'comments': comments})
 
 # '/shareDataBoard/<shareId>' URL에 대한 GET 요청을 처리
 # <shareId>는 동적으로 변하는 값(게시글의 고유 ID)
@@ -322,17 +383,25 @@ def shareDataBoard(shareId):
 def showShareData(shareId):
    # shareId를 ObjectId로 변환하여 해당 ID를 가진 문서를 찾음
    data = db.shareData.find_one({"_id": ObjectId(shareId)})
+   current_user_id = get_user_id_from_token() # 현재 로그인한 사용자 ID 가져오기
    if data:
       # '_id'를 문자열로 변환
       data['_id'] = str(data['_id'])
       # 성공 여부와 함께 게시글의 상세 데이터를 JSON으로 반환
+      # writer_id로 users 컬렉션에서 username 찾기
+      writer_id = data.get('writer')
+      user = db.users.find_one({'id': writer_id})
+      writer_username = user.get('username') if user else "알 수 없음"
+
       return jsonify({
             'result': 'success',
             'title': data.get('title'),
             'content': data.get('content'),
-            'writer': data.get('writer'),
+            'writer': data.get('writer'), # writer_id도 계속 포함
+            'writerUsername': writer_username, # writerUsername 추가
             'date': data.get('date'),
             'likes': data.get('likes'),
+            'current_user_id': current_user_id # 현재 사용자 ID 추가
       })
    else:
       # 해당 게시글을 찾지 못한 경우, 실패 메시지를 JSON으로 반환
@@ -614,6 +683,162 @@ def give_num(study_id):
         updated_study = db.studies.find_one({'_id': id})
 
         return render_template('studyDetail.html', study=updated_study)
+
+# '/createShareData' URL에 대한 GET 요청을 처리
+# 이 함수는 'createQnaBoard.html' 템플릿을 렌더링하여 사용자에게 보여줌
+# 즉, 새로운 게시글을 작성하는 페이지를 보여주는 역할
+@app.route('/createQnaBoard')
+def createQnaBoard():
+   return render_template('createQnaBoard.html')
+
+# '/createQnaBoard' URL에 대한 POST 요청을 처리
+# 이 함수는 사용자가 작성한 게시글 데이터를 받아 데이터베이스에 저장
+@app.route('/createQnaBoard', methods=['POST'])
+def addQnaData():
+   # 클라이언트가 보낸 폼(form) 데이터에서 각 필드의 값을 가져옴
+   qnaTitle = request.form['qnaTitle']  # 제목(title)
+   qnaContent = request.form['qnaContent']  # 내용(content)
+   qnaDate = request.form['date'] # 작성 시간
+   qnaWriter = request.form['writer'] # 작성자 
+      
+   # 데이터베이스에 저장할 딕셔너리 객체를 생성
+   share = {'title':qnaTitle, 'content': qnaContent, 'likes': 0, 'date': qnaDate, 'writer':qnaWriter}
+
+   # mongoDb에 데이터를 삽입(insert)
+   db.qnaBoard.insert_one(share)
+   # 성공적으로 처리되었음을 알리는 JSON 응답을 반환
+   return jsonify({'result': 'success'})
+
+# '/qnaBoardList' URL에 대한 GET 요청을 처리합
+# 이 함수는 'readQnaBoardList.html' 템플릿을 렌더링
+# 이 페이지는 모든 게시글 목록을 보여주는 역할
+@app.route('/qnaBoardList')
+def qnaBoardList():
+   # 클라이언트로부터 'page' 파라미터를 받아옴 없으면 기본값은 1, 타입은 정수
+   page = request.args.get('page', 1, type=int)
+
+   # 한 페이지에 보여줄 게시글의 수를 10으로 설정
+   limit = 10
+   # 건너뛸 게시글의 수를 계산 (예: 3페이지의 경우 (3-1)*10 = 20개를 건너뜁니다)
+   offset = (page - 1) * limit
+
+   # 전체 게시글 수를 계산
+   total_count = db.qnaBoard.count_documents({})
+   # 전체 페이지 수를 계산 (올림 계산)
+   total_pages = math.ceil(total_count / limit)
+
+   # MongoDB에서 데이터를 조회할 때, 계산된 offset만큼 건너뛰고 limit만큼만 가져옴
+   paginated_data = list(db.qnaBoard.find({}).sort('date', -1).skip(offset).limit(limit))
+
+   # 각 게시글마다 writer의 username을 찾아서 추가
+   for item in paginated_data:
+      item['_id'] = str(item['_id'])
+      writer_id = item.get('writer')
+
+      # writer id로 users 컬렉션에서 username 찾기
+      user = db.users.find_one({'id': writer_id})
+      if user:
+         item['writerUsername'] = user.get('username')
+      else:
+         item['writerUsername'] = "알 수 없음"  # 만약 없으면 기본값
+
+      # 날짜 형식 변환 (오류 처리 강화)
+      try:
+          date_timestamp = item.get('date')
+          # JavaScript의 Date.now()는 밀리초 단위이므로 1000으로 나누어 초 단위로 변환
+          dt_object = datetime.datetime.fromtimestamp(int(date_timestamp) / 1000)
+          item['formatted_date'] = dt_object.strftime('%Y-%m-%d %H:%M')
+      except (ValueError, TypeError):
+          # 날짜 데이터가 없거나, 비어있거나, 잘못된 형식일 경우
+          item['formatted_date'] = '날짜 없음'
+
+   return render_template('readQnaBoardList.html', shareDatas=paginated_data, total_pages=total_pages, page=page)
+
+# MongoDB의 ObjectId를 다루기 위해 bson 라이브러리에서 ObjectId를 가져옴
+from bson import ObjectId
+
+# '/qnaBoard/<shareId>' URL에 대한 GET 요청을 처리
+# <shareId>는 동적으로 변하는 값(게시글의 고유 ID)
+# 이 함수는 특정 게시글의 상세 내용을 보여주는 'readQnaBoard.html' 페이지를 렌더링
+@app.route('/qnaBoard/<shareId>')
+def qnaBoard(shareId):
+   return render_template('readQnaBoard.html', shareId=shareId)
+
+# '/detail/qnaBoard/<shareId>' URL에 대한 GET 요청을 처리
+# 이 함수는 특정 게시글의 상세 데이터를 조회하여 JSON 형태로 반환
+@app.route('/detail/qnaBoard/<shareId>')
+def showQnaBoard(shareId):
+   # shareId를 ObjectId로 변환하여 해당 ID를 가진 문서를 찾음
+   data = db.qnaBoard.find_one({"_id": ObjectId(shareId)})
+   current_user_id = get_user_id_from_token() # 현재 로그인한 사용자 ID 가져오기
+   if data:
+      # '_id'를 문자열로 변환
+      data['_id'] = str(data['_id'])
+      # 성공 여부와 함께 게시글의 상세 데이터를 JSON으로 반환
+      # writer_id로 users 컬렉션에서 username 찾기
+      writer_id = data.get('writer')
+      user = db.users.find_one({'id': writer_id})
+      writer_username = user.get('username') if user else "알 수 없음"
+
+      return jsonify({
+            'result': 'success',
+            'title': data.get('title'),
+            'content': data.get('content'),
+            'writer': data.get('writer'), # writer_id도 계속 포함
+            'writerUsername': writer_username, # writerUsername 추가
+            'date': data.get('date'),
+            'likes': data.get('likes'),
+            'current_user_id': current_user_id # 현재 사용자 ID 추가
+      })
+   else:
+      # 해당 게시글을 찾지 못한 경우, 실패 메시지를 JSON으로 반환
+      return jsonify({'result': 'fail', 'msg': '해당 게시글을 찾을 수 없습니다.'}), 404
+
+# '/editQnaBoard/<shareId>' URL에 대한 GET 요청을 처리
+# 이 함수는 기존 게시글을 수정하는 'editQnaBoard.html' 페이지를 렌더링
+# 페이지에 기존 데이터를 채워넣기 위해 먼저 데이터를 조회
+@app.route('/editQnaBoard/<shareId>')
+def editQnaBoard(shareId):
+   data = db.qnaBoard.find_one({"_id": ObjectId(shareId)})
+   if data:
+      data['_id'] = str(data['_id'])  # '_id'를 문자열로 변환
+      # 조회한 데이터를 'editQnaBoard.html' 템플릿에 전달하여 렌더링
+      return render_template('editQnaBoard.html', data=data)
+   else:
+      return "해당 게시글을 찾을 수 없습니다.", 404
+
+# '/editQnaBoard/<shareId>' URL에 대한 POST 요청을 처리
+# 이 함수는 사용자가 수정한 게시글 데이터를 받아 데이터베이스를 업데이트
+@app.route('/editQnaBoard/<shareId>', methods=['POST'])
+def updateQnaBoard(shareId):
+   # 수정된 제목과 내용을 폼 데이터에서 가져옴
+   title = request.form['title']
+   content = request.form['content']
+
+   # 해당 ID를 가진 문서의 'title'과 'content' 필드를 업데이트($set)
+   result = db.qnaBoard.update_one(
+      {"_id": ObjectId(shareId)},
+      {"$set": {"title": title, "content": content}}
+   )
+
+   # 업데이트 성공 여부에 따라 결과를 JSON으로 반환
+   if result.modified_count == 1:
+      return jsonify({'result': 'success'})
+   else:
+      return jsonify({'result': 'fail'})
+
+# '/deleteQnaBoard/<shareId>' URL에 대한 POST 요청을 처리
+# 이 함수는 특정 게시글을 데이터베이스에서 삭제
+@app.route('/deleteQnaBoard/<shareId>', methods=['POST'])
+def deleteQnaBoard(shareId):
+   # 해당 ID를 가진 문서를 삭제
+   result = db.qnaBoard.delete_one({"_id": ObjectId(shareId)})
+
+   # 삭제 성공 여부에 따라 결과를 JSON으로 반환
+   if result.deleted_count == 1:
+      return jsonify({'result': 'success'})
+   else:
+      return jsonify({'result': 'fail'})
 
 # 이 스크립트가 직접 실행될 때만 아래 코드를 실행
 # (다른 파일에서 이 파일을 import할 때는 실행되지 않음)

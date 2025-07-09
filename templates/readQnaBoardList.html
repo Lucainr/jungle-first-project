@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>자료 공유</title>
+    <title>우리들의 Q&A</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -24,7 +24,7 @@
                     alt="정글 로고"></a>
             <div class="nav-menu">
                 <a href="/shareDataBoard">자료 공유</a>
-                <a href="#">우리들의 Q&A</a>
+                <a href="/qnaBoardList">우리들의 Q&A</a>
                 <a href="/goToStudy">스터디 하자</a>
             </div>
             <div class="user-actions">
@@ -49,9 +49,9 @@
                 <div class="container">
                     <div class="col-md-12">
                         <div class="flex">
-                            <h1>자료 공유</h2>
+                            <h1>우리들의 Q&A</h2>
                             <div class="write-btn">
-                                <button onclick="createShareData();">작성하기</button>
+                                <button onclick="createQnaBoard();">작성하기</button>
                             </div>
                         </div>
                         <!-- 서버에서 전달받은 shareDatas를 Jinja2 for 루프로 순회하며 테이블 행을 생성 -->
@@ -60,7 +60,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h2 id="shareTitle">
-                                    <a href="{{ url_for('shareDataBoard', shareId=item._id) }}">{{ item.title }}</a>
+                                    <a href="{{ url_for('qnaBoard', shareId=item._id) }}">{{ item.title }}</a>
                                 </h2>
                                 <small id="date">{{ item.formatted_date }}</small>&nbsp;&nbsp;|&nbsp;&nbsp;<small id="likes">♥{{ item.likes }}</small>
                             </div>
@@ -118,9 +118,9 @@
         });
 
         // '글 작성' 버튼 클릭 시 호출될 함수
-        function createShareData() {
-            // 새로운 게시글을 작성하는 페이지('/createShareData')로 이동
-            window.location.href = "/createShareData";
+        function createQnaBoard() {
+            // 새로운 게시글을 작성하는 페이지('/createQnaBoard')로 이동
+            window.location.href = "/createQnaBoard";
         }
     </script>
 </body>

@@ -1,0 +1,142 @@
+  #commentsList .card:hover {
+            border-width: 2px;
+            /* border 두께 변경 */
+            border-color: #1BD182;
+            /* 강조 색상 (원하는 색상으로 변경 가능) */
+            transition: all 0.2s ease;
+            /* 부드럽게 효과 적용 */
+        }
+
+        #commentBtn,
+        #inventoryBtn,
+        #likeBtn {
+            background-color: #1BD182;
+            border-color: #1BD182;
+        }
+
+        textarea {
+            resize: none;
+        }
+
+        #shareTitle,
+        #shareContent,
+        #writer,
+        #date,
+        #likes {
+            background-color: white;
+        }
+
+        /* 제목 */
+        .form-title {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* 게시글 제목 input */
+        #shareTitle {
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: none;
+            background-color: transparent;
+        }
+
+        /* 내용 textarea */
+        #shareContent {
+            border: 1px solid #ddd;
+            background-color: transparent;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            padding: 10px 0;
+        }
+
+        /* 날짜, 좋아요 수 */
+        #date,
+        #likes {
+            border: none;
+            background-color: transparent;
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        /* 버튼 공통 스타일 */
+        .btn-success,
+        #likeBtn {
+            background-color: #1BD182;
+            border-color: #1BD182;
+            color: white;
+            border-radius: 6px;
+        }
+
+        .btn-success:hover,
+        #likeBtn:hover {
+            background-color: #17b170;
+            border-color: #17b170;
+        }
+
+        .btn-white {
+            background-color: #f1f1f1;
+            border: none;
+            color: #333;
+            border-radius: 6px;
+        }
+
+        .btn-white:hover {
+            background-color: #e0e0e0;
+        }
+
+        /* 댓글 영역 */
+        #commentsList .card {
+            border: 1px solid #eee;
+            border-radius: 10px;
+        }
+
+        #commentContent {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            resize: none;
+        }
+
+        #commentBtn {
+            background-color: #1BD182;
+            border-color: #1BD182;
+            color: white;
+            border-radius: 6px;
+        }
+
+        #commentBtn:hover {
+            background-color: #17b170;
+            border-color: #17b170;
+        }
+
+        h4 {
+            margin-top: 40px;
+            font-weight: bold;
+        }
+
+        #btnGroup {
+            display: flex;
+            justify-content: flex-end;
+            gap: 5px;
+            /* 버튼 사이 간격 */
+        }
+
+        /* 좋아요 버튼 */
+        #likeBtn {
+            width: 45px;
+            height: 45px;
+            padding: 0;
+            font-size: 1.5rem;
+            border-radius: 14%;
+        }
+
+        /* 목록 버튼 간격 */
+        #inventoryBtn {
+            margin-right: 5px;
+        }
+
+        .card-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }

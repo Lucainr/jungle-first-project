@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>자료 공유 게시글 작성</title>
+    <title>우리들의 Q&A 수정</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -50,7 +50,7 @@
                 <div class="container">
                     <div class="col-md-12 d-flex justify-content-center align-items-center">
                         <div class="w-75">
-                            <div class="form-title">자료 공유 글 수정</div>
+                            <div class="form-title">우리들의 Q&A 수정</div>
                             <br>
                             <form class="shareForm">
                                 <div class="mb-3">
@@ -63,7 +63,7 @@
                                 </div>
                                 <div class="d-flex justify-content-end">
                                     <button type="button" class="btn btn-white mr-2" id="inventoryBtn"
-                                        onclick="shareDataList();">목록</button>
+                                        onclick="qnaBoardList();">목록</button>
                                     <button type="submit" id="editBtn" class="btn">수정하기</button>
                                 </div>
                             </form>
@@ -134,7 +134,7 @@
                     $.ajax({
                         type: "POST", // 요청 방식을 POST로 설정
                         // 요청을 보낼 URL을 지정합니다. 백틱(`)을 사용한 템플릿 리터럴로 shareId 변수를 URL에 포함
-                        url: `/editShareData/${shareId}`,
+                        url: `/editQnaBoard/${shareId}`,
                         // 서버로 전송할 데이터를 객체 형태로 지정 {서버에서 받을 키: 보낼 데이터}
                         data: { title: newTitle, content: newContent },
                         // 요청이 성공적으로 완료되었을 때 실행될 콜백 함수
@@ -143,7 +143,7 @@
                             if (response.result === "success") {
                                 // 수정이 완료된 게시글의 상세 보기 페이지로 사용자를 이동
                                 alert("게시글이 성공적으로 수정되었습니다.");
-                                window.location.href = `/shareDataBoard/${shareId}`;
+                                window.location.href = `/qnaBoard/${shareId}`;
                             } else {
                                 alert("수정 실패");
                             }
@@ -159,7 +159,7 @@
         // '목록' 버튼 클릭 시 호출될 함수
         function shareDataList() {
             // 게시판 목록 페이지로 이동
-            window.location.href = "/shareDataBoardList";
+            window.location.href = "/qnaBoardList";
         }
     </script>
 </body>
