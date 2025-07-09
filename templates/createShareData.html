@@ -51,21 +51,26 @@
             // 추후 로그인 기능이 구현되면 동적으로 변경
             let writer = "김김김"
 
-            // jQuery의 Ajax 함수를 사용하여 서버에 비동기적으로 HTTP 요청
-            $.ajax({
-                type : "POST", // 요청 방식을 POST로 설정합니다.
-                // 서버로 전송할 데이터를 객체 형태로 지정
-                // Flask 서버의 request.form['key']에서 'key'에 해당하는 부분
-                data : {shareTitle : title, shareContent : content, date : date, writer : writer},
-                // 요청이 성공적으로 완료되었을 때 실행될 콜백 함수
-                success: function(response){
-                    if (response["result"] == "success") {
-                        alert("포스팅 성공!");
-                    } else {
-                        alert("업로드에 실패하였습니다. 해당 현상이 지속될 경우 고객센터로 문의하여주세요.!")
+            if(title.length == 0 || content.length == 0){
+                alert("공백인 상태의 글을 업로드 할 수 없습니다.\n제대로 입력한 후 다시 업로드해주세요.")
+            }else{   
+                // jQuery의 Ajax 함수를 사용하여 서버에 비동기적으로 HTTP 요청
+                $.ajax({
+                    type : "POST", // 요청 방식을 POST로 설정합니다.
+                    // 서버로 전송할 데이터를 객체 형태로 지정
+                    // Flask 서버의 request.form['key']에서 'key'에 해당하는 부분
+                    data : {shareTitle : title, shareContent : content, date : date, writer : writer},
+                    // 요청이 성공적으로 완료되었을 때 실행될 콜백 함수
+                    success: function(response){
+                        if (response["result"] == "success") {
+                            alert("포스팅 성공!");
+                            window.location.href = "/shareDataBoardList";
+                        } else {
+                            alert("업로드에 실패하였습니다. 해당 현상이 지속될 경우 고객센터로 문의해주세요.")
+                        }
                     }
-                }
-            })
+                })
+            }
         }
     </script>
 </head>
